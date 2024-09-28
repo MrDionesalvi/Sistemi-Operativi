@@ -12,10 +12,12 @@
 \def\layout{2}  
 \pagestyle{fancy}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{document}
+\begin{document} 
 %---------------------------------------
 
 \maketitle
+\newpage
+\afterpage{\blankpage}
 
 %---------------------------------------
 
@@ -23,25 +25,24 @@
 \tableofcontents
 \cleardoublepage\pagenumbering{arabic}
 \setPageStyle{2}
-\afterpage{\blankpage}
-\include{disclaimer/00-Disclaimer}
-\afterpage{\blankpage}
+\afterpage{}
 
 % %---------------------------------------
 
-\definecolor{chaptergrey}{rgb}{0.7,0,0}
 
 \include{chapters/01-Introduzione}
 
-\afterpage{\blankpage}
+\afterpage{}
 
 % %---------------------------------------
 
-% \definecolor{chaptergrey}{rgb}{0,0.7,0}
+\definecolor{chaptergrey}{rgb}{0,0.7,0}
 
-% \include{chapters/02-Complessità}
+\include{chapters/02-Strutture_dei_SO}
 
-% \afterpage{\blankpage}
+\afterpage{}
+
+\include{chapters/03-Gestione_Dei_Processi}
 
 % %---------------------------------------
 
