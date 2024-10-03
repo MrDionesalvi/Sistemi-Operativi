@@ -4,3 +4,10 @@ Teoria/main.toc
 Teoria/chapters/01-Introduzione.aux
 Teoria/chapters/02-Strutture_dei_SO.aux
 Teoria/chapters/03-Gestione_Dei_Processi.aux
+.DS_Store
+.vscode/tasks.json
+Laboratorio/Lab02/es1
+Laboratorio/Lab02/listanomi.txt
+Laboratorio/Lab02/es1.dSYM/Contents/Info.plist
+Laboratorio/Lab02/es1.dSYM/Contents/Resources/DWARF/es1
+Laboratorio/Lab02/es1.dSYM/Contents/Resources/Relocations/aarch64/es1.yml
