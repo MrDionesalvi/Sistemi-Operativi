@@ -250,8 +250,8 @@ int main() {
 
 \clm{}{}{
 $pid == 0$ Lo ha solo il processo figlio. \\
-\textit{pid = id-child} LO ha solo il processo padre. \\
-Così sono in grado di distinguere se sto operando con il figlio o con il padre
+pid = id-child lo ha solo il processo padre. \\
+Così sono in grado di distinguere se sto operando con il figlio o con il padre.
 }
 
 \subsubsection{Significato delle altre sys}
@@ -365,4 +365,51 @@ int in = 0, out = 0;
 \end{itemize}
 
 \textit{Nota}: la soluzione utilizza solo \texttt{SIZE-1} elementi per evitare conflitti tra la condizione di buffer pieno e vuoto.
+
+\subsection{Inter-Processo Comunication (IPC)}
+
+\qs{}{
+Come fanno due processi a scambiarsi le informazioni necessarie alla cooperazione?
+}
+\begin{itemize}
+    \item Il Sistema Operativo (SO) fornisce dei meccanismi di \textbf{Inter-Process Communication (IPC)}.
+    \item Sono disponibili opportune \textbf{system call} che permettono a due (o più) processi di:
+    \begin{itemize}
+        \item \textbf{scambiarsi messaggi} oppure
+        \item \textbf{usare la stessa area di memoria condivisa}, in cui possono scrivere e leggere.
+    \end{itemize}
+\end{itemize}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{images/IPC_graphic.png}
+    \caption{a) Memoria condivisa\\b) Scambio di messaggi}
+\end{figure}
+
+In entrambi i casi, il SO mette a disposizione delle opportune \textbf{system call}. Ad esempio, per lo scambio di messaggi, saranno disponibili delle system call del tipo:
+
+\begin{itemize}
+    \item \texttt{line = msgget();}
+    \item \texttt{send(message, line, process-id);}
+    \item \texttt{receive(message, line, process-id);}
+\end{itemize}
+
+\textbf{(Nota:)} I parametri sono solo indicativi, ogni specifica implementazione avrà il proprio insieme di argomenti.
+
+\bigskip
+Saranno necessarie alcune \textbf{scelte implementative}. 
+
+Nel caso dei \textbf{messaggi} (si parla spesso di \emph{code di messaggi}):
+\begin{itemize}
+    \item Una coda può essere usata da più di due processi?
+    \item Quanti messaggi può ospitare al massimo una coda?
+    \item Cosa deve fare un processo ricevente se non ci sono messaggi, o un processo trasmittente se la linea è piena?
+    \item Si possono trasmettere messaggi di lunghezza variabile?
+\end{itemize}
+
+Nel caso della \textbf{memoria condivisa}:
+\begin{itemize}
+    \item Può avere dimensione variabile?
+    \item Quali processi hanno diritto di usarla?
+    \item Cosa succede se la memoria condivisa viene rimossa?
+\end{itemize}
 

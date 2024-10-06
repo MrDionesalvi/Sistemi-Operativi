@@ -1,0 +1,97 @@
+\chapter{Sincronizzazione dei Processi}
+
+\section{Introduzione}
+Più processi possono cooperare per compiere un determinato lavoro, e spesso \textbf{condividono dei dati}.
+
+\begin{itemize}
+    \item È fondamentale che l'accesso ai dati condivisi da parte dei vari processi non produca dati inconsistenti.
+    \item I processi cooperanti devono quindi \textbf{sincronizzarsi} per accedere ai dati condivisi in modo ordinato.
+    \item \textbf{Problema}: mentre un processo $P$ sta elaborando dati condivisi, il SO potrebbe toglierlo dalla CPU in qualsiasi momento. Altri processi non devono poter accedere ai dati condivisi finché $P$ non ha completato l'elaborazione.
+\end{itemize}
+
+\subsection{Esempio: Produttore-Consumatore con n eleemnti}
+Usiamo una variabile \textbf{\textit{condivisa}} \textbf{counter} inizializzata a 0 che indica il numero di elementi nel buffer.
+
+I due programmi sono corretti se considerati separatamente, ma possono non funzionare quando vengono eseguiti insieme.
+
+\begin{itemize}
+    \item Il problema risiede nell'uso della variabile condivisa \texttt{counter}.
+    \item Che succede se il produttore esegue \texttt{counter++} mentre \textit{contemporaneamente} il consumatore esegue \texttt{counter--}?
+    \item Se \texttt{counter} all'inizio vale 5, dopo \texttt{counter++} e \texttt{counter--} può valere 4, 5 o 6!
+    \item N.B.: diciamo che possono non funzionare, e non che non funzionano, perché la condizione problematica potrebbe non verificarsi sempre.
+\end{itemize}
+Il problema si verifica perchè \texttt{counter++, counter--} non sono \textbf{operazioni atomiche}
+Le operazioni sui dati condivisi possono portare a risultati imprevisti. Consideriamo le istruzioni per il \textbf{produttore} e il \textbf{consumatore} relative alla variabile condivisa \texttt{counter}:
+\textbf{Produttore:}
+\begin{verbatim}
+load(registro1, counter);  % Carica il valore di counter in registro1
+add(registro1, 1);         % Incrementa il valore nel registro di 1
+store(registro1, counter);  % Salva il valore incrementato in counter
+\end{verbatim}
+\textbf{Consumatore:}
+\begin{verbatim}
+load(registro1, counter);  % Carica il valore di counter in registro1
+sub(registro1, 1);         % Decrementa il valore nel registro di 1
+store(registro1, counter);  % Salva il valore decrementato in counter
+\end{verbatim}
+
+Se il produttore e il consumatore accedono a \texttt{counter} in modo non sincronizzato, il valore finale di \texttt{counter} può risultare errato e instabile.
+
+
+Quando i processi devono accedere e modificare dati condivisi, è fondamentale che si \textbf{sincronizzino} affinché ciascuno possa completare le proprie operazioni sui dati prima che un altro processo possa accedervi.
+
+\begin{itemize}
+    \item Questo approccio assicura l'integrità dei dati e previene condizioni di competizione.
+    \item Da notare che il problema non si presenta se tutti i processi coinvolti nell'accesso a un insieme di dati condivisi devono solo \textbf{leggere} quei dati.
+\end{itemize}
+
+
+\section{Sezioni critiche}
+Siano dati $n$ processi $P_1, \ldots, P_n$ che usano variabili condivise. 
+
+ Ogni processo ha una porzione di codice, detta \textbf{sezione critica}, in cui manipola le variabili condivise (o anche solo un loro sottoinsieme).\\
+ Quando un processo $P_i$ è dentro alla propria sezione critica, nessun altro processo $P_j$ può eseguire il codice della propria sezione critica, poiché userebbe le stesse variabili condivise (o anche solo un loro sottoinsieme).\\
+ L'esecuzione delle sezioni critiche di $P_1, \ldots, P_n$ deve quindi essere \textbf{mutualmente esclusiva}.\\
+Mentre un processo $P_i$ sta eseguendo codice nella propria sezione critica, potrebbe essere tolto dalla CPU dal sistema operativo a causa del normale avvicendamento tra processi. \\
+ Fino a che $P_i$ non ha terminato di eseguire il codice della sua sezione critica, \textbf{nessun altro processo $P_j$ che deve manipolare le stesse variabili condivise potrà eseguire il codice della propria sezione critica}.\\
+ \clm{}{}{
+ È importante notare che $P_j$ può comunque eseguire del codice, quando entra in esecuzione, ma non il codice della propria sezione critica.
+ }
+\dfn{Sezione critica}{
+Sezione critica: porzione di codice che deve essereeseguito senza intrecciarsi (nell’avvicendamento in CPU) col codice delle sezioni critiche di altri processi che usano le stesse variabili condivise
+}
+
+\subsection{Problema della Sezione Critica}
+Per garantire l'accesso sicuro alle variabili condivise, è necessario stabilire un \textbf{protocollo di comportamento} per i processi. 
+
+\begin{itemize}
+    \item Un processo deve \textbf{“chiedere il permesso”} per entrare nella sezione critica, utilizzando una opportuna porzione di codice detta \textbf{entry section}.
+    \item Un processo che esce dalla sua sezione critica deve \textbf{“segnalarlo”} agli altri processi, usando una opportuna porzione di codice detta \textbf{exit section}.
+\end{itemize}
+
+Un generico processo Pi contiene una sezine critica che avrà la seguente struttura
+\begin{verbatim}
+    altro codice
+        entry section
+        sezione critica
+        exit section
+    altro codice
+\end{verbatim}
+\bigskip
+Siano dati $n$ processi $P_1, \ldots, P_n$ che usano delle variabili condivise. Una soluzione corretta al problema della sezione critica per $P_1, \ldots, P_n$ deve soddisfare i seguenti tre requisiti:
+
+\begin{enumerate}
+    \item \textbf{Mutua esclusione:} Se un processo $P_i$ è entrato nella propria sezione critica ma non ne è ancora uscito (attenzione, $P_i$ non è necessariamente il processo in esecuzione, cioè quello che sta usando la CPU), nessun altro processo $P_j$ può entrare nella propria sezione critica.
+    \item \textbf{Progresso:} Se un processo lascia la propria sezione critica, deve permettere ad un altro processo $P_j$ di entrare nella propria (di $P_j$) sezione critica. Se la sezione critica è vuota e più processi vogliono entrare, uno tra questi deve essere scelto in un tempo finito (\textit{in altre parole, esiste un processo che entrerà in sezione critica in un tempo finito)}
+    \begin{itemize}
+        \item \clm{}{}{Qquesta condizione garantisce che l’insieme dei processi P1,… Pn (o anche solo un loro sottoinsieme) non finisca in una condizione di deadlock: tutti fermi in attesa di riuscire ad entrare nella loro sezione critica}
+    \end{itemize}
+    \item \textbf{Attesa limitata:} se un processo $P_i$ ha già eseguito la sua entry section (ossia ha già chiesto di entrare nella sua sezione critica), esiste un limite al numero di volte in cui altri processi possono entrare nelle loro sezioni critiche prima che tocchi a $P_i$ \textit{(in altre parole, \textbf{qualsiasi} processo deve riuscire ad entrare in sezione critica in un tempo finito)}
+    \begin{itemize}
+        \item \clm{}{}{Quest’ultima condizione assicura che il processo Pi non subisca una forma di \textbf{starvation}: non riesce a proseguire la sua computazione perché viene sempre sopravanzato da altri processi.}
+    \end{itemize}
+\end{enumerate}
+
+Una qualsiasi soluzione corretta al problema della sezione critica deve permettere ai processi di portare avanti la loro computazione \textbf{indipendentemente} dalla velocità relativa a cui essi procedono (ossia da quanto frequentemente riescono ad usare la CPU), purchè questa sia maggiore di zero.
+
+\cd{cooco}
