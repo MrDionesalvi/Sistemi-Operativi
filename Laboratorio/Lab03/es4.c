@@ -2,10 +2,31 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <ctype.h>
+
+int is_number(const char *str) {
+    while (*str) {
+        if (!isdigit(*str)) {
+            return 0;
+        }
+        str++;
+    }
+    return 1;
+}
 
 int main(int argc, char const *argv[]) {
     pid_t pid;
-    int i;
+    int i, num_children;
+
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <number_of_children>\n", argv[0]);
+        exit(1);
+    }
+
+    if (!is_number(argv[1])) {
+        fprintf(stderr, "Error: Argument must be a number\n");
+        exit(1);
+    }
 
     // Creazione di 3 figli
     for (i = 0; i < atoi(argv[1]); i++) {
