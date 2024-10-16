@@ -4,7 +4,7 @@
 
 
 int main(){
-    FILE* file = fopen("file.txt", "rw");
+    FILE* file = fopen("file.txt", "w+");
     if(file == NULL){
         printf("Error opening file\n");
         return 1;
@@ -15,10 +15,13 @@ int main(){
         return 0;
         break;
     case 0:
-        fprintf(file, "Child scrive dentro al fileeeeee\n");
+        fprintf(file, "Carr scrive dentro al fileeeeee\n");
+        printf("Processo figlio dead\n");
+        exit(0);
         break;
     default:
         wait(NULL);
+        rewind(file);
         if(file == NULL){
             printf("Error opening file\n");
             return 1;
