@@ -1,0 +1,8 @@
+{
+    "pasteImage.path": "${projectRoot}/Teoria/images",
+    "pasteImage.basePath": "${projectRoot}",
+    "pasteImage.showFilePathConfirmInputBox": true,
+    "pasteImage.filePathConfirmInputBoxMode": "onlyName",
+    "pasteImage.forceUnixStyleSeparator": true,
+    "pasteImage.insertPattern": "\\begin{figure}[h] \\centering \\includegraphics[width=0.25\\linewidth]{${imageFilePath}} \\caption{Esempio di MFQS} \\label{fig:5.4} \\end{figure}"
+}
