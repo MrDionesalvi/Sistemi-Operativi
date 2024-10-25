@@ -1,0 +1,78 @@
+\chapter{Stallo dei processi (deadlock)}
+\nt{Questo capitolo è \textbf{facoltativo}, presente per dare più integrità agli appunti totali}
+
+\section{Definizione}
+\dfn{}{Situazione in cui ciascun processo in un insieme di $n$ processi ($n \geq 2$) si trova in uno stato di \textit{attesa} per il verificarsi di un evento che solo uno degli aaltri processi dell'insieme può provocare}
+Il risultato è, chiaramente, una attesa infinita da parte di tutti gli $n$ processi!
+
+\section{Situazioni simili anche nella realtà}:
+\textit{When two trains approach each other at a crossing, both shall come to a full stop and neither shall start up again until the other has gone}\\
+I SO di oggi non affrontano il problema, ma questo spetta a gli utenti. In futuro chi lo sa potrà diventare un compito dei SO.
+
+\section{Problema dei nastri}
+\subsection{Dati Condivisi}
+\begin{verbatim}
+semaphore avail = 2; // il semaforo controlla la disponibilità dei nastri
+\end{verbatim}
+\subsection{Codice dei Processi P1 e P2}
+
+\begin{verbatim}
+// Processo P1
+begin
+    // codice preliminare
+    wait(avail); // P1 prende il primo nastro
+    // altre operazioni
+    wait(avail); // P1 tenta di prendere il secondo nastro
+    // utilizza i nastri
+    signal(avail); // P1 rilascia il primo nastro
+    signal(avail); // P1 rilascia il secondo nastro
+    // codice finale
+end
+
+// Processo P2
+begin
+    // codice preliminare
+    wait(avail); // P2 prende il primo nastro
+    // altre operazioni
+    wait(avail); // P2 tenta di prendere il secondo nastro
+    // utilizza i nastri
+    signal(avail); // P2 rilascia il primo nastro
+    signal(avail); // P2 rilascia il secondo nastro
+    // codice finale
+end
+\end{verbatim}
+
+\subsection{Problema di Deadlock}
+Questo scenario può portare a un deadlock: se entrambi i processi eseguono il primo \texttt{wait(avail)} e occupano ciascuno un nastro, nessuno dei due sarà in grado di eseguire il secondo \texttt{wait(avail)} perché il semaforo \texttt{avail} è inizializzato a 2. Di conseguenza, entrambi i processi rimarranno bloccati.
+
+\section{Un ponte ad una sola corsia}
+Ciascuna posizione di marcia può essere vista come una \textbf{risorsa}, una situazione di deadlock può essere risolta se un auto \textbf{torna indietro} $\Longrightarrow$ (libera una risorsa già occupata), si verifica \textbf{starvation} se ciascuna auto sul ponte attende che l'altra liberi l'unica corsia di marcia
+
+\section{Modello del sistema}
+Un sistema (HW + SO) può essere visto come formato da:
+\begin{itemize}
+    \item un insieme finito di tipi di risorse $R$ (cicli di CPU, spazio di memoria, device di I/O),
+    \item Ogni tipo di risorsa è formata da un certo numero di istanze indistinguibili fra loro (ad esempio la RAM può essere divisa in porzioni identiche, ciascuna delle quali può ospitare un processo),
+    \item Un insieme di processi $P$ che hanno bisogno di una o più istanze di alcune delle risorse per portare a termine la computazione.
+\end{itemize}
+
+\subsection*{Definizione di Deadlock}
+
+Si definisce \textbf{deadlock} di un sottoinsieme di processi del sistema $\{P_1, P_2, \dots, P_n\} \subseteq P$ la situazione in cui ciascuno degli $n$ processi $P_i$ è in attesa del rilascio di una risorsa detenuta da uno degli altri processi del sottoinsieme; si forma cioè una catena circolare per cui:
+
+\[
+P_1 \text{ aspetta } P_2 \dots \text{ aspetta } P_n \text{ aspetta } P_1
+\]
+\noindent Anche se non tutti i processi del sistema sono bloccati, la situazione non è desiderabile in quanto può bloccare alcune risorse e danneggiare anche i processi non coinvolti nel deadlock.
+
+\section{Caratterizzazione dei Deadklock}
+Il SO può avvalersi di una opportuna rappresentazione detta \textbf{grafo} di assegnazione delle risorse che in ogni istante registra quali risorse sono assegnate a quale processo, e quali risorse sta \textbf{aspettando} ciascun processo.
+\section{Metodi per prevenire dei Deadlock}
+\begin{enumerate}
+    \item Prevenire o evitare i deadlock, usando un opportuno protocollo di richiesta e assegnamento delle risorse
+    \item lasciare che il deadlock si verifichi, ma fornire strumenti per la scoperta e il recupero dello stesso, esplorando il grafo di assegnazione delle risorse alla ricerca di cicli.
+    \begin{itemize}
+        \item \clm{}{}{Tuttavia, la soluzione 1 genera un eccessivo sottoutilizzo delle risorse, mentre la soluzione 2 non evita il problema e richiede lavoro al SO per eliminare il deadlock, dunque i SO moderni adottano la soluzione 3: }
+    \end{itemize}
+    \item \textbf{Lasciare agli utenti la prevenzione/gestione dei deadlock}
+\end{enumerate}

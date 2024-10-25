@@ -1,0 +1,160 @@
+\chapter{Esempi di sincronizzazione}
+\section{Produttori-Consumatori con memoria limitata}
+Utilizziamo un buffer circolare di \texttt{SIZE} posizioni in cui i produttori inseriscono i dati e i consumatori li prelevano. 
+
+\subsection*{Dati Condivisi e Inizializzazione dei Semafori}
+\begin{verbatim}
+typedef struct {...} item;
+item buffer[SIZE];
+semaphore full, empty, mutex;
+item nextp, nextc;
+int in = 0, out = 0;
+full = 0;
+empty = SIZE;
+mutex = 1;
+\end{verbatim}
+
+\begin{itemize}
+    \item \texttt{full}: conta il numero di posizioni piene del buffer.
+    \item \texttt{empty}: conta il numero di posizioni vuote del buffer.
+    \item \texttt{mutex}: semaforo binario per garantire l'accesso in mutua esclusione al buffer e alle variabili \texttt{in} e \texttt{out}.
+    \item \texttt{in} e \texttt{out}: servono per gestire l'indice del buffer circolare.
+\end{itemize}
+
+\subsection{Codice del Produttore}
+Il codice per il produttore è il seguente:
+
+\begin{verbatim}
+while (true) {
+    // produce un item in nextp
+    wait(empty);
+    wait(mutex);
+    buffer[in] = nextp; // inserisce nextp nel buffer
+    in = (in + 1) % SIZE; // aggiorna l'indice in
+    signal(mutex);
+    signal(full);
+}
+\end{verbatim}
+
+\subsection{Codice del Consumatore}
+Il codice per il consumatore è il seguente:
+
+\begin{verbatim}
+while (true) {
+    wait(full);
+    wait(mutex);
+    nextc = buffer[out]; // preleva un item dal buffer
+    out = (out + 1) % SIZE; // aggiorna l'indice out
+    signal(mutex);
+    signal(empty);
+    // consuma l'item in nextc
+}
+\end{verbatim}
+
+\subsection{Spiegazione}
+\begin{itemize}
+    \item Usando il semaforo \texttt{mutex}, garantiamo che solo un processo per volta acceda in mutua esclusione al buffer e alle variabili condivise \texttt{in} e \texttt{out}.
+    \item Il semaforo \texttt{empty} assicura che i produttori possano inserire dati solo se ci sono posizioni vuote nel buffer.
+    \item Il semaforo \texttt{full} garantisce che i consumatori possano prelevare dati solo se nel buffer sono presenti item da consumare.
+\end{itemize}
+
+\nt{Implementare Produttori-Consumatori esempio slide :D}
+
+\qs{}{Come può essere semplificato il codice se possiamo supporre che esista un solo produttore?\\
+Come può essere semplificato il codice se possiamo supporre che esista un solo consumatore?}
+
+\section{Problema dei Lettori-Scrittori}
+Vogliamo gestire l'accesso concorrente a un file condiviso tra più processi che possono essere lettori o scrittori:
+
+\begin{itemize}
+    \item I lettori richiedono solo l'accesso in lettura e possono accedere al file contemporaneamente ad altri lettori.
+    \item Gli scrittori richiedono l'accesso in scrittura e devono avere accesso esclusivo al file, senza che altri lettori o scrittori possano accedervi contemporaneamente.
+\end{itemize}
+
+\subsection*{Strutture Dati Condivise}
+Le seguenti strutture dati vengono utilizzate per la sincronizzazione tra lettori e scrittori:
+
+\begin{verbatim}
+semaphore mutex = 1, scrivi = 1;
+int numlettori = 0;
+\end{verbatim}
+
+\begin{itemize}
+    \item \texttt{mutex}: semaforo per garantire la mutua esclusione quando si aggiorna la variabile \texttt{numlettori}.
+    \item \texttt{scrivi}: semaforo che garantisce l'accesso esclusivo al file per gli scrittori.
+    \item \texttt{numlettori}: contatore che tiene traccia del numero di lettori attivi.
+\end{itemize}
+
+\subsection{Codice del Processo Scrittore}
+Il codice per uno scrittore è il seguente:
+
+\begin{verbatim}
+wait(scrivi);
+// esegui la scrittura del file
+signal(scrivi);
+\end{verbatim}
+
+\subsection{Codice del Processo Lettore}
+Il codice per un lettore è il seguente:
+
+\begin{verbatim}
+wait(mutex); // mutua esclusione per aggiornare numlettori
+numlettori++;
+if (numlettori == 1) wait(scrivi); // il primo lettore blocca eventuali scrittori
+signal(mutex);
+
+// leggi il file
+
+wait(mutex);
+numlettori--;
+if (numlettori == 0) signal(scrivi); // l'ultimo lettore sblocca eventuali scrittori
+signal(mutex);
+\end{verbatim}
+
+\subsection{Spiegazione}
+\begin{itemize}
+    \item Lettori quando un lettore vuole accedere al file, incrementa \texttt{numlettori} sotto mutua esclusione grazie a \texttt{mutex}. Se è il primo lettore, blocca l'accesso agli scrittori tramite il semaforo \texttt{scrivi}. Quando un lettore termina di leggere, decrementa \texttt{numlettori} e, se è l'ultimo lettore, rilascia \texttt{scrivi} per permettere agli scrittori di accedere.
+    \item Scrittori quando uno scrittore vuole accedere al file, esegue una \texttt{wait(scrivi)} per ottenere l'accesso esclusivo. Dopo aver completato la scrittura, rilascia il semaforo \texttt{scrivi} con \texttt{signal(scrivi)}.
+\end{itemize}
+
+\qs{}{
+La soluzione garantisce assenza di deadlock e starvation per lettori e scrittori?\\
+Riuscite a pensare a soluzioni alternative, a partire da quella vista?}
+
+\nt{Questa soluzione è \textit{reader-first}, quindi se arrivano sempre lettori, gli scrittori possono andare in starvation. Esistono anche altre soluzione che possono essere writer-first}
+
+\section{Problema di cinque filosofi}
+\subsection{Dati Condivisi}
+\begin{verbatim}
+semaphore bacchetta[5]; // tutte inizializzate a 1
+\end{verbatim}
+
+\subsection{Codice del Filosofo i (Soluzione Errata)}
+
+\begin{verbatim}
+do {
+    wait(bacchetta[i]);
+    wait(bacchetta[(i+1) mod 5]);
+    // mangia
+    signal(bacchetta[i]);
+    signal(bacchetta[(i+1) mod 5]);
+    // pensa
+} while (true);
+\end{verbatim}
+
+\subsection{Problema di Deadlock}
+Questa soluzione può portare a una situazione di deadlock, in cui tutti i filosofi tengono una bacchetta e aspettano l'altra, bloccandosi a vicenda.
+
+\subsection{Soluzioni Migliori}
+Alcune soluzioni possibili per evitare il deadlock includono:
+\begin{itemize}
+    \item Consentire a soli 4 filosofi di sedersi a tavola contemporaneamente.
+    \item Prendere le due bacchette solo se entrambe sono disponibili, usando una sezione critica.
+    \item Prelievo asimmetrico delle bacchette, in cui i filosofi prendono le bacchette in un ordine diverso dai loro vicini.
+\end{itemize}
+
+\nt{Sezione 6.7 Monitori, Capitolo 8 (Approfondire) + Esercizi}
+
+
+\nt{es. e) Spreca il quanto di tempo; d) Un processo kernel mode, può essere sostituito (scadenza quanto di tempo, scelta della CPU).0}
+\nt{Quarto criterio fondamentale della sezione critica: è quello di evitare il busy waiting}
