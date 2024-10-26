@@ -1,9 +1,6 @@
 Teoria/main.aux
 Teoria/main.log
 Teoria/main.toc
-Teoria/chapters/01-Introduzione.aux
-Teoria/chapters/02-Strutture_dei_SO.aux
-Teoria/chapters/03-Gestione_Dei_Processi.aux
 .DS_Store
 .vscode/tasks.json
 Laboratorio/Lab02/es1
@@ -11,7 +8,5 @@ Laboratorio/Lab02/listanomi.txt
 Laboratorio/Lab02/es1.dSYM/Contents/Info.plist
 Laboratorio/Lab02/es1.dSYM/Contents/Resources/DWARF/es1
 Laboratorio/Lab02/es1.dSYM/Contents/Resources/Relocations/aarch64/es1.yml
-Teoria/chapters/06-Sincornizzazione-dei-Processi.aux
-Teoria/chapters/05-Scheduling-della-CPU.aux
-Teoria/chapters/04-Threads.aux
 .vscode/launch.json
+Teoria/chapters/*.aux

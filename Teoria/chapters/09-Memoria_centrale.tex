@@ -454,7 +454,7 @@ Per eseguire un processo con \textbf{x pagine}:
     \item Ogni \emph{entry} della Page Table rappresenta una pagina del processo.
     \item L'indice di ciascuna entry corrisponde al numero della pagina, mentre il valore dell'entry contiene il numero del frame dove è stata memorizzata la pagina.
 \end{itemize}
-
+% \begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/structure_table_pagination.png} \caption{Table Pagination} \label{fig:9.9} \end{figure}
 \subsection*{Problema degli Indirizzi Virtuali}
 Gli \textbf{indirizzi relativi (o virtuali)} del programma, una volta caricati in RAM, non funzionano più come indirizzi lineari contigui. Ad esempio:
 \begin{itemize}
@@ -464,3 +464,307 @@ Gli \textbf{indirizzi relativi (o virtuali)} del programma, una volta caricati i
 
 
 Indirizzi Logici e Fisici, vedere registrazione 25/10/2024 min Circa 30
+
+\subsubsection{Paginazione: metodo di base}
+Gli indirizzi logici diventano delle coppie di valori, in cui:
+\begin{itemize}
+    \item il primo elemento della coppia specifica il numero della pagina all’interno della quale si trova la cella di memoria che vogliamo indirizzare;
+    \item il secondo elemento specifica la posizione (o offset) della cella di memoria che vogliamo indirizzare rispetto ad un ipotetico indirizzo 0 (zero), ovvero l’indirizzo del primo byte della pagina specificata dal primo elemento della coppia.
+\end{itemize}
+Quindi un indirizzo logico assume la forma: $(\text{pagina}, \text{offset})$.
+
+\nt{
+    Come vedremo più avanti, sotto opportune condizioni gli indirizzi logici lineari e gli indirizzi logici specificati come coppie di valori coincidono.
+}
+
+Un indirizzo logico viene tradotto in uno fisico secondo il seguente processo:
+\begin{itemize}
+    \item Il numero di pagina $p$ viene usato come indice nella \textit{page table} del processo per individuare il frame $f$ in cui è contenuta la pagina.
+    \item Una volta noto il frame $f$ che contiene la pagina $p$, l’offset $d$ (dove "d" sta per \textit{displacement}) può essere applicato a partire dall’inizio del frame per indirizzare il byte specificato dalla coppia $(p, d)$.
+\end{itemize}
+
+Vediamo più in dettaglio: ogni informazione all’interno del computer, incluso un indirizzo logico, è in definitiva una sequenza di bit. Ad esempio: 001100010101.
+
+Abbiamo deciso di dividere un indirizzo logico in due parti. Se abbiamo a disposizione 12 bit in tutto, dobbiamo scegliere quanti usare per specificare il numero della pagina e quanti per l’offset all’interno della pagina.
+
+Ad esempio, possiamo decidere di utilizzare 4 bit per rappresentare il numero della pagina e i restanti 8 bit per l’offset. In questo caso, l’indirizzo logico 001100010101 rappresenta:
+\begin{itemize}
+    \item pagina: 3
+    \item offset: 21
+\end{itemize}
+
+La scelta del numero di bit da utilizzare per scrivere il numero di pagina e l’offset dipende dall’hardware su cui dovrà girare il sistema operativo, il quale impone:
+\begin{itemize}
+    \item il numero di bit su cui va scritto un indirizzo logico (ad esempio $m$ bit);
+    \item la dimensione di un frame, e quindi di una pagina (ad esempio $2^n$ byte).
+\end{itemize}
+
+Di conseguenza, dobbiamo utilizzare $n$ bit per rappresentare l'offset all'interno di una pagina/frame, e il numero di bit usati per rappresentare il numero di pagina sarà pari a $m - n$ bit.
+
+\nt{
+    A questo punto, la dimensione dello spazio di indirizzamento logico è stabilita come $2^{(m-n)} \times 2^n$ byte.
+}
+
+\ex{Esempio di Spazio di Indirizzamento Logico}{
+    Consideriamo una macchina in cui i frame hanno dimensione $2^{12}$ byte, ovvero 4096 byte. Di conseguenza, anche la dimensione di una pagina nello spazio di indirizzamento logico del sistema sarà di 4096 byte (quindi $n = 12$).
+    
+    Se la macchina mette a disposizione $m = 22$ bit per rappresentare un indirizzo logico, allora il numero di bit necessari per il numero di pagina sarà $m - n = 10$ bit.
+    
+    In questo caso, lo spazio di indirizzamento logico della macchina risulterà pari a:
+    \[
+    (2^{10} \text{ pagine}) \times (2^{12} \text{ byte}) = 4 \text{ megabyte}
+    \]
+}
+
+\begin{center}
+    \textbf{Struttura di un Indirizzo Logico}
+\end{center}
+\begin{itemize}
+    \item \textbf{Numero di Pagina (p)}: $m - n$ bit
+    \item \textbf{Offset di Pagina (d)}: $n$ bit
+\end{itemize}
+
+\nt{
+    Qui possiamo osservare uno dei tanti casi di interazione tra il sistema operativo e l’hardware sottostante. È infatti l’hardware a decidere la dimensione dei frame e il numero di bit su cui rappresentare un indirizzo logico. Il sistema operativo, quindi, deve adeguarsi a queste impostazioni.
+    
+    Questa configurazione consente una traduzione efficiente degli indirizzi logici in indirizzi fisici direttamente a livello hardware. Alcune parti di un sistema operativo sono infatti progettate in base allo specifico hardware su cui girerà il sistema, al fine di sfruttare al meglio le caratteristiche hardware e minimizzare l’overhead introdotto.
+}
+
+\clm{Scelta della Dimensione dei Frame}{}{
+    Nei processori moderni, è possibile scegliere tra vari valori per la dimensione dei frame, e questa scelta, una volta effettuata, rimane fissa. Ad esempio:
+    \begin{itemize}
+        \item I processori ARM, utilizzati negli iPhone e negli iPad, permettono di scegliere tra 4KB, 16KB, 64KB, 1MB e 16MB come dimensione di un frame.
+        \item La famiglia dei processori Intel, dal Pentium fino ai Core i9, consente di scegliere tra 4KB e 4MB.
+        \item Gli Intel Itanium-2 offrono una gamma più ampia, con opzioni tra 4KB, 8KB, 64KB, 256KB, 1MB, 4MB, 16MB e 256MB.
+    \end{itemize}
+}
+
+\dfn{Traduzione degli Indirizzi Logici in Indirizzi Fisici}{
+    Definiamo più precisamente l'operazione di traduzione da indirizzi logici a indirizzi fisici. Un indirizzo logico è formato da due componenti $(p, d)$:
+    \begin{itemize}
+        \item \textbf{Numero di Pagina (p)}: utilizzato come indice per selezionare la entry corrispondente nella \textit{Page Table}, che contiene il numero del frame in cui è caricata la pagina.
+        \item \textbf{Offset di Pagina (d)}: utilizzato all’interno del frame individuato al passo precedente per localizzare il byte specificato dall’indirizzo logico.
+    \end{itemize}
+}
+
+\subsubsection{Paginazione: traduzione degli indirizzi}
+Possiamo ora riassumere e integrare quanto detto finora, osservando che:
+
+\begin{enumerate}
+    \item Gli indirizzi logici nello spazio di indirizzamento logico possono essere interpretati come valori lineari oppure come coppie $(\text{pagina}, \text{offset})$.
+    \item Ciascuna entry di una tabella delle pagine può contenere il numero del frame o, alternativamente, l’indirizzo di partenza del frame. Tuttavia, per ragioni pratiche, viene scelta la prima opzione: memorizzare il numero del frame.
+\end{enumerate}
+
+\nt{
+    Ecco quindi la doppia natura degli indirizzi logici, che sono contemporaneamente valori lineari e coppie $(\text{pagina}, \text{offset})$.
+}
+
+Consideriamo uno spazio di indirizzamento logico di dimensione $2^m$ byte, e assumiamo che ogni pagina abbia una dimensione pari a $2^n$ byte. Un indirizzo logico lineare scritto su $m$ bit può quindi essere scomposto in:
+\begin{itemize}
+    \item i bit più significativi $(m - n)$, che indicano il numero di pagina $p$;
+    \item i bit meno significativi $n$, che rappresentano l’offset $d$.
+\end{itemize}
+
+\begin{center}
+    \textbf{Struttura di un Indirizzo Logico}
+\end{center}
+\begin{itemize}
+    \item \textbf{Numero di Pagina (p)}: $(m - n)$ bit
+    \item \textbf{Offset di Pagina (d)}: $n$ bit
+\end{itemize}
+
+\ex{Esempio di Spazio di Indirizzamento Logico}{
+    Supponiamo di avere uno spazio di indirizzamento logico di 16 byte, quindi gli indirizzi logici sono rappresentati con $m = 4$ bit, poiché $2^4 = 16$. Ogni pagina ha dimensione $2^2 = 4$ byte, con $n = 2$.
+
+    Di conseguenza, gli indirizzi logici vanno da $0000$ a $1111$, mentre il programma che occupa questo spazio è costituito dalle istruzioni/dati etichettati come "a, b, c, d, e, f, g, h, i, l, m, n" che coprono tre pagine, dove ciascuna istruzione/dato occupa un byte.
+    
+    \nt{
+        In questo esempio, lo spazio di indirizzamento logico del programma è suddiviso in pagine. Gli indirizzi di istruzioni e dati, che costituiscono lo spazio di indirizzamento logico, sono quindi valori consecutivi che vanno da $0000$ (prima istruzione) a $1011$ (ultima istruzione).
+    }
+    
+    Osserviamo come gli $(m - n)$ bit più significativi di ciascun indirizzo rappresentano il numero di pagina, mentre i restanti $n$ bit meno significativi indicano l'offset all'interno della pagina.
+}
+
+\begin{center}
+    \begin{tabular}{cc}
+        \textbf{Indirizzo Logico} & \textbf{Contenuto} \\
+        \hline
+        \textbf{00 00} & a \\
+        \textbf{00 01} & b \\
+        \textbf{00 10} & c \\
+        \textbf{00 11} & d \\
+        \textbf{01 00} & e \\
+        \textbf{01 01} & f \\
+        \textbf{01 10} & g \\
+        \textbf{01 11} & h \\
+        \textbf{10 00} & i \\
+        \textbf{10 01} & l \\
+        \textbf{10 10} & m \\
+        \textbf{10 11} & n \\
+    \end{tabular}
+\end{center}
+
+Ogni indirizzo è quindi composto da:
+\begin{itemize}
+    \item I primi due bit, che rappresentano il numero di pagina:
+    \begin{itemize}
+        \item $00$ per la pagina 0
+        \item $01$ per la pagina 1
+        \item $10$ per la pagina 2
+    \end{itemize}
+    \item Gli ultimi due bit, che rappresentano l’offset all’interno della pagina.
+\end{itemize}
+
+\nt{
+    Supponiamo ora di caricare il programma in RAM. Utilizziamo 5 bit per rappresentare un indirizzo fisico, quindi lo spazio di indirizzamento fisico ha dimensione pari a $2^5 = 32$ byte. Tuttavia, la nostra macchina è dotata di soli 20 byte di RAM, suddivisi in 5 frame, ciascuno con un indirizzo che va da $00000$ a $10011$.
+}
+
+\ex{Esempio di Traduzione Indirizzo Logico in Indirizzo Fisico}{
+    Consideriamo l’indirizzo logico $0010$. La sua conversione in un indirizzo fisico procede così:
+    \begin{enumerate}
+        \item \textbf{Numero di Pagina}: il numero di pagina (0) è utilizzato per accedere alla \textit{Page Table}, che ci indica che la pagina 0 è caricata nel frame 4.
+        \item \textbf{Offset}: l'offset di 2 bit $(10)$ viene applicato a partire dall’indirizzo iniziale del frame 4.
+    \end{enumerate}
+    Di conseguenza, l’indirizzo fisico risultante è $10010$.
+}
+
+% \begin{figure}[h] \centering \includegraphics[width=0.25\linewidth]{images/pagination_example.png} \caption{Esempo di paginazione} \label{fig:9.10} \end{figure}
+
+\clm{Struttura di un Indirizzo Fisico}{}{
+    Notiamo un aspetto importante: nei nostri indirizzi fisici, i bit più significativi (5 - 2 = 3 bit) indicano il numero di frame corrispondente. Ad esempio, per l’indirizzo $10010$, i primi 3 bit $100$ identificano il frame 4.
+}
+
+\nt{
+    Le pagine e i frame sono configurati per avere una dimensione $|P|$ pari a una potenza di 2, ossia $|P| = 2^n$. Grazie a questa proprietà, l'offset all'interno di ogni pagina o frame varia da una configurazione di tutti zeri a una di tutti uno:
+    \[
+        \text{Offset valido: } 00 \dots 00 \text{ a } 11 \dots 11.
+    \]
+    Di conseguenza, l’indirizzo di partenza di ogni pagina o frame richiede che gli $n$ bit meno significativi siano impostati a 0.
+}
+
+\clm{Struttura degli Indirizzi di Partenza}{}{
+    Gli indirizzi logici di inizio pagina nello spazio di indirizzamento di un programma avranno la forma seguente:
+    \[
+        \begin{array}{l}
+            00 \dots 00 \; 00 \dots 00 \quad \text{inizio della pagina 0} \\
+            00 \dots 01 \; 00 \dots 00 \quad \text{inizio della pagina 1} \\
+            00 \dots 10 \; 00 \dots 00 \quad \text{inizio della pagina 2} \\
+            00 \dots 11 \; 00 \dots 00 \quad \text{inizio della pagina 3}
+        \end{array}
+    \]
+    Lo stesso vale per i frame nello spazio di indirizzamento fisico.
+}
+
+\nt{
+    Se rimuoviamo gli $n$ bit meno significativi da un indirizzo logico di $m$ bit, i rimanenti $m - n$ bit contano semplicemente le pagine (in binario) in cui è suddiviso lo spazio di indirizzamento logico. Ad esempio:
+    \[
+        \begin{array}{l}
+            00 \dots 00 = \text{pagina 0} \\
+            00 \dots 01 = \text{pagina 1} \\
+            00 \dots 10 = \text{pagina 2} \\
+            00 \dots 11 = \text{pagina 3}
+        \end{array}
+    \]
+    Questa logica vale anche per i frame nello spazio fisico, utilizzando un numero di bit adeguato per rappresentare i frame.
+}
+
+\ex{Ricostruzione dell'Indirizzo Fisico}{
+    Supponiamo di avere un indirizzo logico in cui il numero di pagina e l’offset sono rappresentati come segue:
+    \[
+        \text{Numero di pagina } = 001010, \quad \text{Frame } = 1110001
+    \]
+    \[
+        \text{Offset } = 101010
+    \]
+    Allora, l’indirizzo logico diventa $001010101010$, mentre l’indirizzo fisico corrispondente sarà $1110001101010$.
+}
+
+\nt{
+    La conversione da indirizzo logico a fisico si basa sull’operazione di somma dell'indirizzo base del frame con l'offset, ad esempio:
+    \[
+        \begin{array}{l}
+            \text{Indirizzo base del frame: } 1110001000000 \\
+            \text{Offset: } \phantom{\text{Indirizzo base del frame: }} 101010
+        \end{array}
+    \]
+    Somma:
+    \[
+        1110001000000 + 101010 = 1110001101010
+    \]
+}
+
+\clm{Efficienza della Traduzione}{}{
+    Se le dimensioni di pagine e frame sono potenze di due:
+    \begin{enumerate}
+        \item Non è necessario effettuare la somma tra l'indirizzo base del frame e l'offset, risparmiando tempo di calcolo.
+        \item Non è necessario memorizzare l'indirizzo di base in ogni entry della page table, ma solo il numero del frame, poiché gli $n$ bit meno significativi dell'indirizzo di partenza sono tutti a 0, con un risparmio di spazio.
+    \end{enumerate}
+    Generare un indirizzo fisico diventa quindi un’operazione di concatenazione veloce tra il numero di frame e l'offset, eseguibile direttamente dall’hardware.
+}
+
+\nt{
+    Quando le dimensioni di pagine e frame sono potenze di due, possiamo interpretare l’operazione di calcolo dell'indirizzo fisico come una concatenazione, anziché una somma:
+    \[
+        1110001000000 + 101010 = 1110001101010 \quad \Rightarrow \quad 1110001 \text{ “attaccato a” } 101010.
+    \]
+    Usando potenze di due, la costruzione dell'indirizzo fisico è più semplice e può essere gestita velocemente dall’hardware.
+}
+
+\ex{Esempio: Dimensione della Page Table}{
+    Consideriamo un sistema in cui:
+    \begin{itemize}
+        \item l’indirizzo fisico è su 38 bit,
+        \item l’indirizzo logico è su 40 bit,
+        \item una pagina è di 8 Kbyte, quindi $2^{13}$ byte.
+    \end{itemize}
+    
+    La dimensione della page table più grande possibile per questo sistema si calcola come segue:
+    
+    \begin{enumerate}
+        \item \textbf{Calcolo del numero di entry nella page table}:
+        \[
+            \frac{2^{40} \text{ byte}}{2^{13} \text{ byte}} = 2^{27} \text{ entry}.
+        \]
+        
+        \item \textbf{Numero di bit necessari per ogni entry}: Ogni entry deve essere in grado di indirizzare un frame nello spazio fisico. Lo spazio di indirizzamento fisico è diviso in:
+        \[
+            \frac{2^{38} \text{ byte}}{2^{13} \text{ byte}} = 2^{25} \text{ frame}.
+        \]
+        Il numero minimo di byte per rappresentare un frame è di 4 byte.
+        
+        \item \textbf{Calcolo della dimensione totale della page table}:
+        \[
+            2^{27} \times 2^2 \text{ byte} = 2^{29} \text{ byte} = 512 \text{ Mbyte}.
+        \]
+    \end{enumerate}
+}
+La paginazione permette di separare lo spazio di indirizzamento logico da quello fisico. Ogni programma “vede” la memoria come uno spazio contiguo che parte sempre dall'indirizzo logico 0, ma in realtà il programma è distribuito in diversi frame fisici, sparsi in memoria assieme ad altri programmi.
+La paginazione introduce una protezione automatica dello spazio di indirizzamento. Un processo può accedere solo ai frame elencati nella sua page table, poiché ogni page table viene gestita e costruita dal sistema operativo per ciascun processo.
+
+\clm{Vantaggi e Limiti della Paginazione}{}{
+    \begin{itemize}
+        \item \textbf{Eliminazione della frammentazione esterna}: Ogni frame libero può essere utilizzato per memorizzare una pagina, riducendo gli sprechi di memoria.
+        \item \textbf{Frammentazione interna}: Rimane una media di mezza pagina per processo, poiché l’ultima pagina del processo può non occupare completamente il frame assegnato.
+        \item \textbf{Rilocazione dinamica}: La paginazione implementa una forma di rilocazione dinamica, dove ogni pagina è mappata su un diverso valore del registro di rilocazione, ossia l’indirizzo di partenza del frame che contiene la pagina.
+    \end{itemize}
+}
+
+\subsection{Rilocazione Dinamica}
+
+\subsubsection{Rilocazione Dinamica Tramite Registri di Limite e di Rilocazione}
+La \textbf{rilocazione dinamica} viene gestita inizialmente utilizzando due registri principali:
+\begin{itemize}
+    \item \textbf{Registro di limite}: Controlla che l’indirizzo logico rientri nello spazio di indirizzamento del processo. Se l’indirizzo eccede questo limite, il sistema lancia un’eccezione di indirizzamento.
+    \item \textbf{Registro di rilocazione}: Viene usato per traslare l’indirizzo logico approvato in un indirizzo fisico, aggiungendo il valore del registro di rilocazione all’indirizzo logico (vedi Fig. 9.6).
+\end{itemize}
+
+Questo approccio verifica dunque prima la validità dell'indirizzo logico rispetto allo spazio di indirizzamento del processo, per poi calcolare l’indirizzo fisico finale.
+
+\subsubsection{Rilocazione Dinamica di Ogni Singola Pagina Tramite la Page Table}
+Con la \textbf{paginazione}, la gestione della rilocazione dinamica cambia in quanto:
+\begin{itemize}
+    \item La suddivisione in pagine elimina la necessità di un controllo tramite il registro limite. 
+    \item Ogni indirizzo logico è diviso in \textbf{numero di pagina} e \textbf{offset}, dove l’offset rappresenta sempre una posizione interna al frame associato, eliminando il rischio di indirizzamenti fuori dai limiti (vedi Fig. 9.8).
+\end{itemize}
+
+In questo caso, il controllo e la mappatura degli indirizzi sono effettuati dalla page table, la quale memorizza l’indirizzo di ciascun frame per ogni pagina del processo attivo.
