@@ -757,14 +757,235 @@ La \textbf{rilocazione dinamica} viene gestita inizialmente utilizzando due regi
     \item \textbf{Registro di limite}: Controlla che l’indirizzo logico rientri nello spazio di indirizzamento del processo. Se l’indirizzo eccede questo limite, il sistema lancia un’eccezione di indirizzamento.
     \item \textbf{Registro di rilocazione}: Viene usato per traslare l’indirizzo logico approvato in un indirizzo fisico, aggiungendo il valore del registro di rilocazione all’indirizzo logico (vedi Fig. 9.6).
 \end{itemize}
-
 Questo approccio verifica dunque prima la validità dell'indirizzo logico rispetto allo spazio di indirizzamento del processo, per poi calcolare l’indirizzo fisico finale.
-
 \subsubsection{Rilocazione Dinamica di Ogni Singola Pagina Tramite la Page Table}
 Con la \textbf{paginazione}, la gestione della rilocazione dinamica cambia in quanto:
 \begin{itemize}
     \item La suddivisione in pagine elimina la necessità di un controllo tramite il registro limite. 
     \item Ogni indirizzo logico è diviso in \textbf{numero di pagina} e \textbf{offset}, dove l’offset rappresenta sempre una posizione interna al frame associato, eliminando il rischio di indirizzamenti fuori dai limiti (vedi Fig. 9.8).
 \end{itemize}
-
 In questo caso, il controllo e la mappatura degli indirizzi sono effettuati dalla page table, la quale memorizza l’indirizzo di ciascun frame per ogni pagina del processo attivo.
+
+\subsection{Dimensione delle Pagine e Gestione della Tabella delle Pagine}
+
+\subsubsection{Dimensione Storica delle Pagine}
+Nel tempo, la \textbf{dimensione delle pagine} di memoria è aumentata progressivamente per adattarsi alle esigenze di gestione della memoria dei sistemi operativi:
+\begin{itemize}
+    \item Le dimensioni comuni oggi includono pagine da \textbf{4 KB}, \textbf{8 KB}, \textbf{16 KB} e possono arrivare fino a \textbf{256 MB}.
+    \item \textbf{Vantaggi di pagine più grandi}: Permettono di ridurre la lunghezza delle page table, il che riduce lo spazio richiesto in RAM per mantenere la tabella. 
+    \item \textbf{Svantaggi di pagine più grandi}: Producono una maggiore frammentazione interna, poiché una pagina più grande può avere porzioni non completamente utilizzate da un processo.
+\end{itemize}
+
+\subsubsection*{Page Table e Frame Table}
+A ogni processo è associata una \textbf{tabella delle pagine (page table)}, che contiene informazioni sui frame assegnati alle pagine del processo. La gestione della memoria fisica richiede inoltre che il sistema operativo mantenga una \textbf{frame table}, che descrive lo stato di ogni frame nella memoria fisica:
+\begin{itemize}
+    \item Indica quali frame sono liberi e quali sono occupati.
+    \item Registra quale pagina di quale processo occupa ogni frame.
+\end{itemize}
+
+\subsubsection*{Attivazione della Page Table e Contesto del Processo}
+Ogni volta che avviene un \textbf{context switch} (ovvero, quando la CPU passa da un processo a un altro), il sistema operativo deve attivare la page table del nuovo processo:
+\begin{itemize}
+    \item Ciò comporta un \textbf{tempo di configurazione} aggiuntivo durante il cambio di contesto, poiché la page table del nuovo processo deve essere caricata e attivata.
+    \item L’attivazione della page table incide sulle performance del sistema, rallentando potenzialmente il cambio di contesto.
+\end{itemize}
+
+\subsubsection*{Supporto Hardware alla Paginazione}
+La \textbf{paginazione richiede un supporto hardware} per garantire efficienza, poiché ogni accesso alla memoria passa per il meccanismo di traduzione da indirizzi logici a indirizzi fisici. La sfida principale risiede nella gestione della page table:
+\begin{itemize}
+    \item Ogni indirizzo logico generato dalla CPU deve passare attraverso una entry della page table, quindi l’\textbf{accesso alla page table deve essere rapido}.
+    \item In sistemi con un numero ridotto di pagine per processo, come nel caso del \textbf{PDP-11} (che utilizzava \textbf{8 registri} per memorizzare la page table con una memoria fisica di 64 KB, divisa in 8 frame da 8 KB), la page table poteva essere memorizzata in registri della CPU.
+    \item Tuttavia, nei computer moderni, le page table contengono migliaia di entry e non è possibile mantenerle tutte all’interno dei registri della CPU.
+\end{itemize}
+
+\subsection{Supporto Hardware}
+Siamo costretti a tenere la PT di ogni processo in MP, consumando spazio. Questo rende preferibile l'uso di pagine più grandi.
+Per accedere a un dato all’indirizzo logico $I$, dobbiamo prima accedere alla RAM per recuperare il numero del frame e calcolare l’indirizzo fisico, e solo successivamente utilizzarlo per leggere il dato. In questo modo il numero di accessi alla memoria principale raddoppia, il che è inaccettabile, poiché un accesso in RAM può costare oltre 100 cicli di clock, rispetto ai 5 cicli necessari se il dato si trova in un registro o nella cache L1 della CPU.
+Per migliorare l'efficienza e ridurre i tempi di accesso alla PT, si utilizza una tecnica di caching della PT tramite una memoria associativa della CPU, detta \emph{Translation Look-aside Buffer} (TLB). Questo esempio mostra come i progettisti hardware possano dotare i processori di dispositivi che facilitano e ottimizzano il lavoro del SO.
+Per facilitare l’accesso rapido alla PT, il sistema operativo ha anche un registro dedicato che contiene l’indirizzo di partenza della PT del processo attivo, detto \emph{Page-Table Base Register} (PTBR). Durante un \emph{context switch}, è sufficiente aggiornare il valore del PTBR per “attivare” la PT del nuovo processo in esecuzione.
+La memoria associativa è costituita da coppie chiave–valore. Fornendo una chiave come input, essa viene confrontata simultaneamente con tutte le chiavi memorizzate, restituendo il valore associato. Questo dispositivo, benché molto veloce e costoso, ha dimensioni ridotte (tra 64 e 1024 elementi).
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/chiave-valorePTB.png} \caption{chiave-valorePTB} \label{fig:9.9} \end{figure}
+
+La TLB contiene una porzione della PT, costituita da coppie chiave–valore sotto forma di numero di pagina (chiave) e relativo frame (valore). Quando viene generato un indirizzo logico, il numero di pagina viene fornito alla TLB per ottenere il frame associato.
+
+\cor{Hit Ratio nella TLB}{
+    Il termine \emph{Hit Ratio} indica la percentuale di successi (hit) nella ricerca del numero di pagina nella TLB. Un maggiore hit ratio implica una minore degradazione delle prestazioni.
+}
+
+\ex{Calcolo delle prestazioni con e senza TLB}{
+    Supponiamo: 1) un TLB perfetto, ossia accedere al TLB non costa tempo; 2) 10 nanosec per accedere alla RAM una volta tradotto l’indirizzo logico in fisico; 3) \emph{hit ratio} pari all'80\%. Il tempo medio di accesso in RAM sarà:
+    
+    \[
+    10 \, \text{nsec} \times 0,80 + (10 + 10) \, \text{nsec} \times 0,20 = 12 \, \text{nsec}
+    \]
+
+    Il che comporta una degradazione delle prestazioni del 20\%.
+
+    Se il TLB avesse invece un \emph{hit ratio} del 99\%, il tempo medio di accesso alla memoria sarebbe:
+
+    \[
+    10 \, \text{nsec} \times 0{,}99 + (10 + 10) \, \text{nsec} \times 0{,}01 = 10{,}1 \, \text{nsec}
+    \]
+
+    Questo porterebbe a una degradazione delle prestazioni di appena l'1\%.
+
+    Se, invece, consideriamo che il TLB abbia un tempo di accesso maggiore di zero, diciamo all'incirca 1 nsec (cioè un decimo del tempo di accesso in RAM), con un \emph{hit ratio} del 99\% il tempo medio di accesso alla memoria sarebbe:
+
+    \[
+    (10 + 1) \, \text{nsec} \times 0{,}99 + (10 + 10) \, \text{nsec} \times 0{,}01 = 11{,}09 \, \text{nsec}
+    \]
+
+    In questo caso la degradazione delle prestazioni sarebbe di quasi l'11\%.
+
+    Quando si verifica un \emph{miss} nella TLB, la coppia pagina-frame mancante viene recuperata attraverso la PT in RAM e copiata nella TLB. Questo permette che i successivi riferimenti alla stessa pagina usino la copia memorizzata nella TLB, riducendo il tempo di accesso.
+
+    Se il TLB è pieno, una delle sue \emph{entry} deve essere sovrascritta, solitamente scegliendo l'elemento meno recentemente utilizzato (Least Recently Used, LRU) o selezionandone uno casuale.
+
+    \nt{
+    Al \emph{context switch} il TLB deve essere svuotato; verrà successivamente ripopolato con le coppie pagina-frame del nuovo processo in esecuzione.
+    }
+
+}
+
+\subsection{Pagine condivise}
+Quando due processi eseguono lo stesso codice, mantenere in memoria principale (MP) due copie identiche del codice non solo è inutile, ma spreca anche spazio in RAM. La paginazione facilita la condivisione del codice, poiché permette di memorizzare una sola copia di codice, condivisa tra i processi. Questo è possibile perché il codice, essendo \emph{non modificabile} durante l'esecuzione, viene definito come \emph{codice puro} o \emph{rientrante}.
+
+\nt{
+Una pagina condivisa può essere utilizzata per contenere codice di librerie dinamiche che diversi processi possono usare contemporaneamente, riducendo ulteriormente lo spazio richiesto in MP per il codice eseguito da più processi.
+}
+
+\begin{figure}[h] \centering \includegraphics[width=0.45\linewidth]{images/shared_code_paginatedEnv.png} \caption{shared_code_paginatedEnv.png} \label{fig:9.9} \end{figure}
+
+\section{Paginazione a più livelli}
+
+Nei moderni calcolatori, lo spazio di indirizzi logici può ormai raggiungere anche \(2^{64}\) byte. Per un sistema con \(2^{32}\) byte di spazio logico e pagine da 4 Kbyte (\(2^{12}\) byte), la \emph{Page Table} (PT) può avere fino a un milione (\(2^{20}\)) di entry. Se ogni entry occupa 4 byte, la PT del processo occuperà quindi 4 Mbyte, richiedendo ben 1024 frame per essere completamente contenuta in memoria principale (MP).
+
+\qs{} {
+Considerando questi numeri, è possibile ipotizzare la dimensione massima dello spazio di indirizzamento fisico del sistema?
+}
+
+Assumendo uno spazio logico di \(2^{32}\) byte, pagine da 4 Kbyte (\(2^{12}\) byte), e una dimensione di 4 byte per ogni entry della PT, si ha che ogni entry della PT deve contenere il numero di un frame del sistema. Con 32 bit a disposizione, possiamo numerare fino a \(2^{32}\) frame (dal frame 0 al frame \(2^{32}-1\)). Dunque, lo spazio di indirizzamento fisico del sistema può contenere al massimo \(2^{32}\) frame e avere una dimensione massima di \(2^{32} \times 2^{12} = 2^{44}\) byte.
+
+\nt{
+L'uso della paginazione consente di evitare la necessità di allocare grandi aree contigue di memoria principale, ma può succedere che la PT del processo attivo sia comunque molto grande, creando problemi di allocazione.
+}
+
+Una possibile soluzione consiste nell'implementare una \emph{paginazione a due livelli}, che suddivide la PT in pagine memorizzate in frame non adiacenti in MP. In questo caso, la PT vera e propria (ora chiamata \emph{PT interna}) richiede una \emph{PT esterna}, che indica in quali frame sono memorizzate le pagine della PT interna.
+
+\ex{Esempio di paginazione a due livelli}{
+Consideriamo una macchina con 32 bit di spazio di indirizzamento logico e fisico, e con pagine/frame da 4 Kbyte. In questo caso, un indirizzo logico sarà composto da:
+\begin{itemize}
+    \item 20 bit per il numero della pagina 
+    \item 12 bit per l'offset all'interno della pagina.
+\end{itemize}
+
+Il numero di pagina \(p\), espresso su 20 bit, sarà quindi ulteriormente suddiviso in:
+\begin{itemize}
+    \item 10 bit più significativi (\(p_1\)): entry della PT esterna, che punta al frame \(F_1\) contenente una porzione della PT interna.
+    \item 10 bit intermedi (\(p_2\)): offset nel frame \(F_1\).
+\end{itemize}
+
+Pertanto, l'indirizzo logico sarà strutturato come segue:
+
+\[
+\text{p} = \text{p}_1 \ \text{p}_2 \ \text{d}
+\]
+dove:
+\begin{itemize}
+    \item \(p_1\): 10 bit per la pagina esterna
+    \item \(p_2\): 10 bit per la pagina interna
+    \item \(d\): 12 bit per l'offset all'interno della pagina.
+\end{itemize}
+}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/traduzione_indirizzi_paginazione2Livelli.png} \caption{traduzione_indirizzi_paginazione2Livelli.png} \label{fig:9.16} \end{figure}
+
+\ex{Esempio di calcolo dell'indirizzo fisico}{
+Per comprendere il funzionamento della paginazione a due livelli in termini numerici, consideriamo un sistema in cui ogni entry delle PT occupa 4 byte (anche se tecnicamente sarebbero sufficienti 20 bit, poiché il numero massimo di frame è limitato). Prendiamo in esame la PT più grande, denominata \emph{PT interna}, che contiene \(2^{20}\) entry e quindi ha una dimensione di \(4 \times 2^{20}\) byte, richiedendo esattamente \(2^{10} = 1024\) frame.
+
+La PT interna è quindi memorizzata in 1024 frame non contigui. Per tracciare la loro allocazione, il sistema operativo costruisce una \emph{PT esterna}, che occupa esattamente un frame (poiché ciascuna delle sue 1024 entry occupa 4 byte).
+
+I passi per tradurre un indirizzo logico \(V\) di 32 bit in un indirizzo fisico sono i seguenti:
+\begin{itemize}
+    \item I 10 bit più significativi di \(V\), indicati come \(p_1\), servono per individuare una delle 1024 entry nella PT esterna, che funziona come un array di 1024 entry da 4 byte ciascuna.
+    \item In questa entry, viene recuperato il numero del frame \(F_1\) che contiene una delle pagine della PT interna.
+    \item Utilizzando i 10 bit intermedi di \(V\) (\(p_2\)), accediamo a una delle 1024 entry del frame \(F_1\). Questa entry contiene il numero del frame \(F_2\) che memorizza la pagina dell'indirizzo logico \(V\) (definito ora da \(p_1 p_2\)).
+    \item Infine, aggiungendo l'offset \(d\) a \(F_2\), otteniamo l'indirizzo fisico finale.
+\end{itemize}
+}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/ex_paginazione2Livelli.png} \caption{ex_paginazione2Livelli.png} \label{fig:9.17} \end{figure}
+
+
+\section{Paginazione a due livelli}
+La \textbf{paginazione a due livelli} è stata utilizzata, ad esempio, nei vecchi processori Pentium (lo vedremo successivamente come esempio pratico). Altre architetture, come la \textbf{VAX} di Digital Equipment Corporation (DEC), implementavano una \emph{PT esterna} composta da soli 4 elementi.
+
+\qs{Gestione dello spazio logico su 64 bit}{
+Che cosa accade con uno spazio di indirizzamento logico di 64 bit?\\
+\textbf{Dimostrazione:} Con pagine da 4 Kbyte e 4 byte per entry nelle PT, la PT esterna può arrivare a occupare \(2^{44}\) byte. (Provate a verificare questo valore!)
+}
+
+Consideriamo ora la \textbf{PT interna} più grande con un indirizzamento logico a 64 bit:
+\begin{itemize}
+    \item Tale PT richiede \( \frac{2^{64}}{2^{12}} = 2^{52}\) entry, occupando dunque \(2^{52} \times 2^2 = 2^{54}\) byte.
+    \item Questo corrisponde a \(\frac{2^{54}}{2^{12}} = 2^{42}\) frame.
+    \item La PT esterna necessiterà quindi di \(2^{42}\) entry, ognuna da 4 byte, raggiungendo una dimensione di \(2^{42} \times 2^2 = 2^{44}\) byte.
+\end{itemize}
+
+\nt{
+Con un indirizzamento logico a 64 bit, anche la PT esterna diventa così grande da necessitare una paginazione ulteriore. Questo problema non si limita alle architetture a 64 bit; anche alcune architetture a 32 bit implementavano paginazioni su più livelli:
+}
+
+\begin{itemize}
+    \item \emph{SPARC} (SUN Microsystems) a 32 bit: utilizzava una paginazione a 3 livelli.
+    \item CPU a 32 bit \emph{Motorola 68030}: implementava uno schema di paginazione a 4 livelli.
+\end{itemize}
+
+\clm{Overhead della paginazione su architetture a 64 bit}{
+In sistemi a 64 bit, nemmeno 4 livelli di paginazione risultano sufficienti. Per esempio, l'architettura \emph{UltraSPARC} richiede fino a 7 livelli di paginazione. Se una pagina non è disponibile nel \emph{TLB}, la traduzione da indirizzo logico a fisico può richiedere l'attraversamento di 7 livelli di pagine in RAM, causando un notevole overhead.
+}
+
+
+\subsection{Page Table Invertita (IPT)}
+Una soluzione alternativa adottata in alcune architetture a 64 bit è la \textbf{Tabella delle Pagine Invertita (IPT)}, la cui gestione presenta caratteristiche diverse rispetto alla paginazione tradizionale.
+
+\begin{itemize}
+    \item Una \emph{IPT} descrive l’occupazione dei frame nella memoria fisica. Al contrario delle \emph{PT}, esiste una sola \emph{IPT} per tutto il sistema (invece di una per ciascun processo), riducendo così lo spreco di memoria.
+    \item La dimensione dell’\emph{IPT} dipende esclusivamente dalla dimensione della memoria primaria: ogni entry rappresenta un frame specifico, e il numero di entry totali equivale al numero di frame.
+    \item L’indice di ogni entry dell’\emph{IPT} corrisponde al numero di un frame in memoria principale.
+\end{itemize}
+
+Ogni entry dell'\emph{IPT} è costituita da una coppia di valori:
+\[
+\langle \text{process-id}, \text{page-number} \rangle
+\]
+dove:
+\begin{itemize}
+    \item \emph{process-id} identifica il processo proprietario della pagina.
+    \item \emph{page-number} indica il numero della pagina contenuta nel frame rappresentato da quella entry.
+\end{itemize}
+
+\begin{quote}
+Ogni indirizzo logico generato dalla CPU è quindi una tripla:
+\[
+\langle \text{process-id}, \text{page-number}, \text{offset} \rangle
+\]
+Per generare l'indirizzo fisico, si cerca nella \emph{IPT} la coppia \(\langle \text{process-id}, \text{page-number} \rangle\). Se viene trovata nella \(i\)-esima entry, l'indirizzo fisico sarà \(\langle i, \text{offset} \rangle\).
+\end{quote}
+
+\clm{Vantaggi e svantaggi dell’IPT}{
+Utilizzare una \emph{IPT} permette di risparmiare spazio, ma può aumentare il tempo di traduzione degli indirizzi logici in fisici, in quanto:
+\begin{itemize}
+    \item Per ottenere l’indirizzo fisico, è necessario scorrere la \emph{IPT} alla ricerca della entry contenente la coppia \(\langle \text{process-id}, \text{page-number} \rangle\), il che può richiedere centinaia o migliaia di accessi alla memoria principale (MP) se la \emph{IPT} è memorizzata in RAM.
+    \item Tuttavia, l’uso di \emph{memorie associative} per contenere tutta o parte dell’\emph{IPT} consente la traduzione della maggior parte degli indirizzi senza un significativo impatto sulle prestazioni.
+\end{itemize}
+}
+
+\section{Il supporto alla paginazione nei vecchi processori Intel}
+La paginazione può, in teoria, essere implementata senza supporto hardware, ma un aiuto dall'hardware è fondamentale se si vogliono evitare significative degradazioni delle prestazioni. Oltre al supporto essenziale fornito dal \emph{Translation Lookaside Buffer (TLB)}, tutti i processori moderni offrono una gamma di facilitazioni per una gestione efficiente dei riferimenti in memoria.
+
+Un esempio classico è rappresentato dalla famiglia dei vecchi processori Intel Pentium (ad esempio, Pentium 3 e 4). 
+
+A scelta del sistema operativo che gira sul processore, è possibile utilizzare pagine da 4 Kbyte o da 4 Mbyte. Nel caso di pagine da 4 Kbyte, il processore adotta uno schema di paginazione a due livelli. La traduzione degli indirizzi da logici a fisici avviene nel modo consueto attraverso l'unità di paginazione:
+
+
+\section{Conclusioni}
+// TODO: :D
