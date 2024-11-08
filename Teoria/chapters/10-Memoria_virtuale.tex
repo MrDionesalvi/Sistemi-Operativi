@@ -99,3 +99,404 @@ Supponiamo di dover leggere un dato in MP:
     \text{eat} = [(1 - p) \times ma] + [p \times \text{tempo di gestione del page fault}]
     \]
 \end{itemize}
+
+\clm{Passi per la gestione di un page fault}{}{
+    L’elenco completo dei passi necessari a gestire un page fault è descritto nel testo, ma le tre operazioni principali sono:
+    \begin{enumerate}
+        \item \textbf{Gestione del page fault}: richiede da 1 a 100 μsec.
+        \item \textbf{Recupero della pagina mancante dalla Memoria Secondaria (MS)}: circa 8 millisecondi. Questo valore può variare a seconda del sistema, ma, se la memoria secondaria è su Hard Disk, l’ordine di grandezza è comunque di qualche millisecondo.
+        \item \textbf{Riavvio del processo}: richiede da 1 a 100 μsec.
+    \end{enumerate}
+    \nt{I tempi per i punti 1 e 3 sono trascurabili rispetto al punto 2.}
+}
+
+\section*{Calcolo del Tempo di Accesso Effettivo}
+
+Assumendo \textit{ma} = 200 nanosecondi, otteniamo (valori espressi in nanosecondi):
+\[
+\text{eat} = (1 - p) \times 200 + p \times 8.000.000 = 200 + p \times 7.999.800
+\]
+
+\ex{Calcolo con probabilità di page fault}{ 
+    Se consideriamo \( p = 0.001 \) (un page fault ogni 1000 accessi), allora:
+    \[
+    \text{eat} = 200 + 0.001 \times 7.999.800 = 8.199,8 \text{ (circa 8,2 microsecondi)}
+    \]
+    \nt{In questo caso, l’esecuzione rallenta di oltre 40 volte!}
+}
+
+\qs{Degrado massimo del 10\%}{}{
+    Per avere un degrado massimo del 10\%, la probabilità \( p \) deve rispettare la seguente disuguaglianza:
+    \[
+    \text{eat} = 220 > 200 + 8 \times 10^6 \times p
+    \]
+    \[
+    20 > 8 \times 10^6 \times p
+    \]
+    \[
+    p < 2,5 \times 10^{-6}
+    \]
+    Questo significa che non ci dovrebbero essere più di un page fault ogni 400.000 accessi in memoria.
+}
+
+\qs{400.000 accessi: sono molti o pochi?}{}{
+    Se un processo esegue circa un milione di istruzioni, quanti accessi in RAM genera approssimativamente?
+    \nt {
+
+    }
+}
+
+\nt{
+    Il numero di page fault deve essere estremamente basso per evitare un aumento inaccettabile del tempo medio di esecuzione dei processi. Se il numero di page fault è elevato, il \textit{throughput} del sistema peggiora invece di migliorare.
+}
+
+\nt{
+    È possibile intervenire anche sul tempo di gestione del page fault. Ad esempio:
+    \begin{itemize}
+        \item Usare pagine di grandi dimensioni, che possono ridurre il numero medio di page fault. (Perché?);
+        \item Ottimizzare l'accesso alla Memoria Secondaria, anche se questa strategia presenta limiti, poiché implica comunque l’uso di hard disk. Si veda anche il capitolo 11, che tratta delle memorie a stato solido.
+    \end{itemize}
+}
+
+
+\subsection{L'area di swap}
+
+
+\dfn{Memoria Virtuale e Area di Swap}{
+    Per funzionare, la memoria virtuale necessita di una porzione dedicata dell'Hard Disk, detta \textit{area di swap}.
+}
+
+\nt{
+    Al momento dell'installazione del sistema operativo (SO), viene riservata una porzione del disco come area di swap ad uso esclusivo del SO. Questa area è gestita con meccanismi più semplici ed efficienti rispetto a quelli del file system:
+    \begin{itemize}
+        \item Le pagine dei processi non vengono salvate all'interno di file, evitando così l'uso dei file descriptor;
+        \item Spesso, vengono utilizzati blocchi più grandi, con allocazione contigua, per migliorare le prestazioni di accesso (questo concetto sarà più chiaro nella parte sulla gestione della memoria secondaria).
+    \end{itemize}
+}
+
+\clm{Utilizzo dell'Area di Swap}{
+    Un modo semplice di usare l'area di swap consiste nel copiare l'eseguibile intero di un processo nell'area di swap all'avvio del processo:
+    \begin{itemize}
+        \item Il tempo di avvio del processo aumenta;
+        \item Sono necessarie aree di swap di grandi dimensioni;
+        \item Tuttavia, la gestione dei page fault è più veloce, poiché il recupero delle pagine è più rapido una volta che queste sono già nell'area di swap, senza passare attraverso il file system.
+    \end{itemize}
+}
+
+\clm{Uso Alternativo dell'Area di Swap}{
+    In alternativa, le pagine dell’eseguibile o di eventuali file di dati possono essere lette direttamente dal file system:
+    \begin{itemize}
+        \item Utile quando occorre limitare le dimensioni dell'area di swap;
+        \item L’avvio dei processi è più veloce;
+        \item L'esecuzione può risultare più lenta rispetto all'uso della swap.
+    \end{itemize}
+}
+
+Notiamo che l’area di swap sembra meno utile se viene utilizzata solo per ospitare gli eseguibili e gli eventuali dati in input prima di avviare i processi. 
+Funzione Principale dell'Area di Swap
+L’area di swap viene utilizzata soprattutto per:
+\begin{itemize}
+    \item Liberare spazio in memoria primaria (MP) per ospitare pagine mancanti, caricate in RAM in risposta a un page fault.
+\end{itemize}
+
+
+\nt{
+    In effetti, se ci fosse sempre un frame libero, una pagina verrebbe caricata in MP solo la prima volta che viene indirizzata. Tuttavia, l'idea principale della memoria virtuale è di:
+    \begin{itemize}
+        \item Permettere l'esecuzione di un processo più grande della memoria primaria disponibile.
+        \item Consentire l'esecuzione simultanea di processi che, nel complesso, richiedono più spazio di quello disponibile in RAM.
+    \end{itemize}
+}
+
+Si consideri la situazione in cui due processi occupano più spazio di quello disponibile in memoria principale (cfr. Fig. 10.9).
+\begin{figure}[h] \centering \includegraphics[width=0.5\linewidth]{images/swap_disegno.png} \caption{Swap 10.9} \label{fig:10.9} \end{figure}
+Dunque, se si verifica un page fault e tutti i frame della RAM sono occupati, occorre liberarne uno rimuovendo la
+agina che ospita, che prende il nome di \textbf{pagina vittima}.\\
+Se la pagina vittima contiene dati modificati o fa parte dello stack o della heap di un processo, la pagina va salvata nell’area di swap, in modo che possa essere recuperata quando il processo a cui appartiene vi farà riferimento.\\
+Le pagine di codice non devono essere salvate, tanto ce n’è comunque una copia nel file system, ma se erano state copiate inizialmente nell’area di swap potranno poi essere recuperate più velocemente se riferite di nuovo.\\
+
+
+\section{Sostituzione delle pagine}
+\qs{}{Cosa succede se si verifica un page fault e non c'è alcun frame libero in RAM?}{
+    In questo caso, il sistema operativo esegue i seguenti passi:
+    \begin{itemize}
+        \item Seleziona una pagina "vittima" da rimuovere.
+        \item Salva la pagina vittima nell'area di swap (se necessario).
+        \item Carica la pagina mancante nel frame liberato.
+    \end{itemize}
+}
+
+\nt{
+Questa procedura è simile al concetto di \textit{swapping} di processi interi. Tuttavia, con la memoria virtuale, il sistema sposta tra RAM e hard disk solo frammenti di processo, ossia una pagina alla volta.
+}
+
+\nt{
+Se la pagina vittima non è stata modificata da quando è stata caricata in RAM, si può evitare di salvarla nuovamente su disco, poiché ne esiste già una copia in memoria secondaria.
+}
+
+Se la pagina vittima è stata modificata, il tempo di gestione del page fault raddoppia poiché è necessario sia salvarla che caricare la nuova pagina. Un \textit{dirty bit} associato a ciascuna entry della tabella delle pagine (PT) può semplificare il processo: il \textit{dirty bit} viene settato a 1 dall’hardware della CPU la prima volta che la pagina viene modificata in RAM. In questo modo, solo le pagine vittima con il \textit{dirty bit} a 1 devono essere salvate in memoria secondaria.
+
+\clm{Modifica e salvataggio delle pagine in memoria virtuale}{}{
+    Solo le pagine di dati (stack e heap) possono essere modificate e, quindi, avere il \textit{dirty bit} a 1. Le pagine di codice, essendo accedute solo in lettura, non necessitano di essere salvate nell'area di swap se scelte come pagine vittima. Inoltre, se il codice era stato inizialmente copiato nell'area di swap, riportare le pagine di codice in RAM è più rapido rispetto al caricamento dall'eseguibile nel file system.
+}
+
+\nt{
+La gestione della sostituzione delle pagine è fondamentale per consentire l'esecuzione di programmi più grandi della memoria primaria disponibile. Tuttavia, ciò comporta due problemi rilevanti:
+\begin{itemize}
+    \item \textbf{Scelta della pagina da sostituire}: Quale pagina scegliere come vittima?
+    \item \textbf{Allocazione dei frame}: Quanti frame assegnare a ciascun processo? (aspetto che verrà discusso in seguito)
+\end{itemize}
+Il metodo utilizzato per risolvere questi problemi influisce notevolmente sulle prestazioni di esecuzione dei processi.
+}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/sostituzione_di_pagina.png} \caption{sostituzione_di_pagina.png} \label{fig:10.10} \end{figure}
+
+\subsection{Algoritmi di sostituzione delle pagine}
+Se una pagina vittima appena rimossa viene nuovamente indirizzata dal processo a cui appartiene, si verifica un \textit{page fault} e la pagina deve essere ricaricata in memoria principale. In questo caso, parte del lavoro viene sprecato.\\
+Al contrario, se la pagina vittima scelta non verrà mai più utilizzata, non sarà necessario ricaricarla in memoria, ottimizzando l'uso della memoria primaria.\\
+
+\clm{Obiettivo degli algoritmi di sostituzione delle pagine}{}{
+    Un buon algoritmo di sostituzione minimizza il numero di \textit{page fault}. In letteratura, questi algoritmi sono spesso chiamati \textit{algoritmi di rimpiazzamento delle pagine}.
+}
+
+\qs{Come possiamo valutare l'efficacia di diversi algoritmi di sostituzione delle pagine?}{}{
+    Si può valutare l'efficacia tramite sequenze di riferimenti in memoria principale:
+    \begin{itemize}
+        \item \textbf{generate casualmente}, oppure
+        \item \textbf{generate dall'esecuzione di programmi reali}.
+    \end{itemize}
+    Non interessa l’indirizzo esatto dell'istruzione, ma solo il numero della pagina indirizzata, ignorando quindi l’offset.
+}
+
+\ex{Esempio di sequenza di riferimento}{
+    Supponiamo che la sequenza di riferimento sia:
+    \[
+    10, 7, 4, 5, 6, 1, 10, 4, \dots
+    \]
+    Durante l’esecuzione, la CPU ha generato una sequenza di indirizzi logici che indirizzano le pagine in quest'ordine.
+}
+
+\qs{Quanti \textit{page fault} genera questa sequenza di riferimento?}{}{
+    Supponiamo di avere a disposizione un solo frame in memoria. Con questa ipotesi, la sequenza provoca 8 \textit{page fault}.
+    
+    Consideriamo invece la seguente sequenza:
+    \[
+    10, 7, 7, 7, 4, 5, 5, 5, 5, 6, 1, 10, 10, 10, 10, 4
+    \]
+    Anche questa sequenza causa 8 \textit{page fault}, poiché i riferimenti consecutivi alla stessa pagina non generano nuovi \textit{page fault} dopo che la pagina è stata caricata in memoria primaria.
+}
+
+\nt{
+Pertanto, le sequenze:
+\[
+10, 7, 4, 5, 6, 1, 10, 4
+\]
+e
+\[
+10, 7, 7, 7, 4, 5, 5, 5, 5, 6, 1, 10, 10, 10, 10, 4
+\]
+sono equivalenti per quanto riguarda la valutazione della bontà di un algoritmo di sostituzione.
+}
+
+\nt{
+Il numero di \textit{page fault} generati da una sequenza per un dato algoritmo di sostituzione dipende anche dal numero di frame disponibili. Intuitivamente, all’aumentare dei frame disponibili, il numero di \textit{page fault} tende a ridursi — ma come vedremo, ciò non accade sempre!
+}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/page_faultGraph.png} \caption{page_faultGraph.png} \label{fig:5.4} \end{figure}
+
+\subsection{Sostituzione delle pagine secondo l’ordine d’arrivo (FIFO)}
+Nel seguito, assumeremo che a ogni processo venga assegnato un numero prestabilito di frame e che la scelta della pagina vittima avvenga esclusivamente tra le pagine del processo stesso. Questa politica prende il nome di sostituzione \textbf{locale} delle pagine.\\
+Assumiamo inoltre uno schema di \textit{paginazione su richiesta puro}: quando un processo inizia, nessuna delle sue pagine è in RAM, e quindi il primo riferimento a una pagina qualsiasi genera un \textit{page fault}.\\
+
+\dfn{Algoritmo FIFO}{
+    L’algoritmo \textbf{FIFO} (First In, First Out) sceglie come pagina vittima quella presente da più tempo in memoria principale. Questo approccio è semplice da implementare ma non garantisce sempre buone prestazioni:
+    \begin{itemize}
+        \item Se la pagina vittima contiene codice di inizializzazione usato solo all'inizio, allora la rimozione va bene, poiché la pagina non verrà più utilizzata.
+        \item Tuttavia, se la pagina contiene una variabile usata per tutta l’esecuzione del codice o una procedura richiamata frequentemente, la rimozione potrebbe rivelarsi inefficiente.
+    \end{itemize}
+}
+
+\ex{Esempio di FIFO}{
+    Consideriamo la sequenza di riferimenti:
+    \[
+    7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1
+    \]
+    Con 3 frame disponibili, questa sequenza produce 15 \textit{page fault} (vedi Fig. 10.12).
+}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/fifo_page_fault.png} \caption{10.12} \label{fig:10.12} \end{figure}
+
+\nt{
+L'algoritmo FIFO è affetto dalla cosiddetta \textit{Anomalia di Belady}: in alcuni casi, aumentando il numero di frame, il numero di \textit{page fault} può paradossalmente aumentare!
+}
+
+\ex{Anomalia di Belady}{
+    Consideriamo la seguente stringa di riferimento:
+    \[
+    1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5
+    \]
+    In alcuni casi, aumentando il numero di frame, il numero di \textit{page fault} prodotti può aumentare (vedi Fig. 10.13). È importante notare che questo fenomeno si verifica solo per alcune specifiche sequenze di riferimento.
+}
+
+\begin{figure}[h] \centering \includegraphics[width=0.33\linewidth]{images/belady_anomaly.png} \caption{10.13} \label{fig:10.13} \end{figure}
+
+\dfn{Algoritmo OPT (o MIN)}{
+    L’algoritmo \textbf{OPT}, o \textbf{MIN}, seleziona come vittima la pagina che verrà utilizzata più avanti nel tempo rispetto a tutte le altre pagine attualmente in memoria. Questo algoritmo garantisce il numero minimo di \textit{page fault} per un dato numero di frame, evitando l'anomalia di Belady.
+    
+    Tuttavia, \textbf{OPT non è implementabile} in un sistema reale, poiché richiederebbe una conoscenza anticipata dell’uso delle pagine. Viene usato solo come termine di paragone per valutare le prestazioni di altri algoritmi.
+}
+
+\ex{Esempio di OPT}{
+    Utilizzando l'algoritmo OPT con 3 frame, la sequenza:
+    \[
+    7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1
+    \]
+    produce 9 \textit{page fault} (vedi Fig. 10.14).
+}
+
+\subsection{Algoritmo LRU (Least Recently Used)}
+\nt{
+L’algoritmo OPT è ideale perché sceglie come pagina vittima quella che non verrà più utilizzata nel futuro, ma ovviamente non è implementabile. Un tentativo di approssimazione di questo comportamento è l’algoritmo \textbf{LRU} (Least Recently Used), che seleziona come vittima la pagina che non è stata usata da più tempo.
+}
+
+\dfn{Algoritmo LRU}{
+    L'algoritmo \textbf{LRU} non soffre dell'anomalia di Belady e si avvicina molto a OPT, ma ha il difetto di essere difficile da implementare in modo efficiente. In pratica, LRU guarda al passato (anziché al futuro) per determinare quale pagina rimuovere. Questo approccio funziona bene nella maggior parte dei casi, ma è più complesso da implementare.
+}
+
+\ex{Esempio di LRU}{
+    Consideriamo la seguente sequenza di riferimenti:
+    \[
+    7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1
+    \]
+    Con 3 frame disponibili, l'algoritmo LRU produce 12 \textit{page fault} (vedi Fig. 10.15).
+}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/lru_pages_alg.png} \caption{10.15} \label{fig:10.15} \end{figure}
+L’implementazione dell'algoritmo LRU richiederebbe un supporto hardware da parte della CPU che, purtroppo, non è disponibile nelle architetture moderne. Tuttavia, esistono approcci che utilizzano un supporto hardware più semplice per approssimare LRU in modo accettabile.
+
+\dfn{Reference Bit}{
+    Molti processori forniscono un \textit{reference bit}, un bit associato a ciascuna pagina nella Page Table di un processo. Quando un processo inizia, tutti i reference bit delle sue pagine sono inizializzati a 0 dal sistema. 
+    \begin{itemize}
+        \item Quando una pagina viene indirizzata (sia in lettura che in scrittura), l'hardware imposta a 1 il reference bit di quella pagina.
+        \item In questo modo, possiamo sapere quali pagine sono state utilizzate di recente, anche se non sappiamo l'ordine esatto di accesso.
+    \end{itemize}
+}
+
+\subsubsection{Algoritmo LRU Seconda Chance}
+Partendo da un algoritmo FIFO, in caso di \textit{page fault} il sistema operativo esamina la pagina che è entrata per prima in RAM. Se il reference bit di questa pagina è 0, essa viene scelta come pagina vittima. Se invece il reference bit è 1, la pagina riceve una "seconda chance": il suo reference bit viene azzerato e viene trattata come se fosse appena entrata in memoria.
+
+\dfn{Algoritmo della Seconda Chance}{
+    L'algoritmo della seconda chance funziona come segue:
+    \begin{itemize}
+        \item Se il reference bit di una pagina è 0, la pagina viene selezionata come vittima.
+        \item Se il reference bit è 1, il bit viene azzerato e la pagina viene spostata in fondo alla coda FIFO.
+    \end{itemize}
+    Se in una sequenza di sostituzioni tutte le pagine hanno il reference bit impostato a 1, l'algoritmo riprende a esaminare la prima pagina della coda (quella entrata per prima in RAM) e la seleziona come vittima, tornando di fatto a un algoritmo FIFO.
+}
+Se una pagina viene riferita frequentemente, il suo reference bit rimarrà a 1 per la maggior parte del tempo, riducendo la probabilità che venga selezionata come vittima. Questo algoritmo è una buona approssimazione di LRU ed è decisamente più efficiente di una gestione completa di LRU in hardware.\\
+Se “next victim” non viene riferita prima di una seconda chiamata dell’algoritmo, il suo reference bit resta a 0, quindi non è stata riferita di recente, e diviene quindi una buona candidata alla sostituzione.\\
+
+\begin{figure}[h] \centering \includegraphics[width=0.25\linewidth]{images/second_chanceQueue.png} \caption{10.17} \label{fig:10.17} \end{figure}
+
+\subsection{Algoritmo Seconda Chance con Dirty Bit} 
+Quando l'hardware fornisce sia il \textit{reference bit} che il \textit{dirty bit}, le pagine possono essere classificate in quattro gruppi, ognuno dei quali ha una priorità diversa per essere sostituito:
+
+\dfn{Classificazione delle Pagine}{
+    Le pagine sono raggruppate in base a due bit: il \textit{reference bit} e il \textit{dirty bit}.
+    \begin{itemize}
+        \item \textbf{(0, 0)}: La pagina non è stata utilizzata di recente e non è stata modificata. È la migliore da rimpiazzare.
+        \item \textbf{(1, 0)}: La pagina è stata utilizzata di recente, ma non è stata modificata. È una buona candidata, ma meno preferibile rispetto a quella (0, 0).
+        \item \textbf{(0, 1)}: La pagina non è stata utilizzata di recente, ma è stata modificata. È meno buona da sostituire, in quanto dovrà essere salvata in memoria secondaria per non perdere le modifiche.
+        \item \textbf{(1, 1)}: La pagina è stata utilizzata di recente e modificata. È la peggiore da sostituire, poiché richiede di essere salvata in memoria secondaria prima di essere rimossa.
+    \end{itemize}
+}
+Il principio di sostituzione applicato in questo algoritmo è simile a quello della "Seconda Chance". In questo caso, si seleziona come vittima la prima pagina che appartiene alla classe migliore non vuota (quella con il valore \textbf{(0, 0)} se disponibile, poi \textbf{(1, 0)}, e così via).
+
+\dfn{Algoritmo di Sostituzione con Reference e Dirty Bit}{
+    L'algoritmo, che si basa su questa classificazione delle pagine, è utilizzato in molti sistemi operativi Unix e in macOS. La scelta della pagina da rimpiazzare dipende dallo stato combinato dei bit di riferimento e di modifica, con la preferenza per le pagine meno utilizzate e non modificate.
+}
+
+\section{Allocazione dei Frame}
+In un sistema multiprogrammato, la distribuzione dei frame disponibili tra i processi può essere gestita in vari modi:
+
+\dfn{Strategie di Distribuzione dei Frame}{
+    \begin{itemize}
+        \item \textbf{Allocazione uniforme}: Ogni processo riceve lo stesso numero di frame. Ad esempio, se ci sono $n$ frame e $p$ processi, ogni processo ottiene $n/p$ frame.
+        \item \textbf{Allocazione proporzionale}: I frame vengono distribuiti in base alle dimensioni di ogni processo. Ad esempio, se i processi sono di dimensioni diverse, i processi più grandi riceveranno più frame.
+        \item \textbf{Allocazione proporzionale in base alla priorità}: La distribuzione dei frame tiene conto della priorità dei processi. I processi con priorità più alta ricevono più frame.
+        \item \textbf{Allocazione con riserva di frame}: Alcuni frame devono essere tenuti liberi per consentire l'ingresso di nuovi processi nel sistema.
+    \end{itemize}
+}
+
+\dfn{Esempio di Allocazione Proporzionale}{
+    Se abbiamo 11 frame disponibili e i processi P1, P2 e P3 hanno dimensioni rispettive di 4, 6 e 12 pagine, la distribuzione dei frame sarà:
+    \begin{itemize}
+        \item P1: 2 frame,
+        \item P2: 3 frame,
+        \item P3: 6 frame.
+    \end{itemize}
+}
+Nel caso dell'allocazione proporzionale in base alla priorità, il numero di frame assegnati a ciascun processo dipenderà dalla priorità relativa dei processi (e in alcuni casi dalle loro dimensioni).\\
+
+\dfn{Allocazione dei Frame e Grado di Multiprogrammazione}{
+    \nt{
+    Qualunque schema di allocazione venga scelto, il numero di frame assegnato a ciascun processo cambierà in funzione del grado di multiprogrammazione. 
+    }
+}
+
+\dfn{Strategie di Selezione della Vittima per la Rimozione}{
+    In caso di page fault, bisogna scegliere quale pagina rimuovere dalla memoria principale:
+    \begin{itemize}
+        \item \textbf{Allocazione globale}: La vittima è scelta fra tutte le pagine in memoria principale, esclusi i frame utilizzati dal sistema operativo. Questo approccio potrebbe rimuovere una pagina di un altro processo rispetto a quello che ha causato il page fault.
+        \item \textbf{Allocazione locale}: La vittima è scelta fra le pagine del processo che ha causato il page fault, mantenendo costante il numero di frame allocato a ciascun processo.
+    \end{itemize}
+}
+
+\wc{Problemi}{
+\textbf{Problemi dell'Allocazione Globale}: La strategia globale rende il turnaround di un processo fortemente dipendente dal comportamento degli altri processi, con un elevato rischio di variazione nelle prestazioni da un'esecuzione all'altra. 
+
+\textbf{Problemi dell'Allocazione Locale}: Se un processo riceve troppi frame, ciò può ridurre il throughput complessivo del sistema, poiché gli altri processi avranno meno frame disponibili e genereranno più page fault.
+}
+
+\nt {
+Si è visto sperimentalmente che l’allocazione globale fornisce in genere un throughput maggiore e riesce a gestire la multiprogrammazione in maniera più flessibile.\\
+L’allocazione globale è di solito preferita per sistemi time sharing, in cui molti utenti possono usare contemporaneamente il sistema.\\
+I sistemi Windows usano l’allocazione locale, mentre Linux e Solaris usano l’allocazione globale delle pagine.\\
+}
+
+\subsection{Thrashing (attività di paginazione degenere)}
+\nt{
+Consideriamo un sistema in cui, in un dato momento, ogni processo ha a disposizione un numero ridotto di frame, cioè ogni processo ha in memoria principale (MP) un numero di pagine inferiore rispetto al numero totale di pagine di cui è composto. Supponiamo anche di adottare una allocazione globale dei frame. Va sottolineato che il problema del \textbf{thrashing} si può verificare anche nel caso di allocazione locale dei frame. 
+}
+
+\dfn{Probabilità di Page Fault}{
+    Con poche pagine in RAM per processo, la probabilità che ogni processo generi un page fault è alta. In seguito a un page fault, una pagina vittima viene rimossa dalla memoria principale (MP), probabilmente da un altro processo. 
+
+    Questo altro processo, a sua volta, avrà ancora meno pagine in memoria, aumentando ulteriormente la probabilità che anche esso generi un page fault a breve. Si innesca così un circolo vizioso in cui:
+    \begin{itemize}
+        \item Ogni processo genera continuamente page fault,
+        \item I frame vengono "rubati" tra i vari processi,
+        \item La probabilità di page fault aumenta continuamente.
+    \end{itemize}
+}
+
+\dfn{Thrashing}{
+    Questo fenomeno è noto come \textbf{thrashing}, che si verifica quando il sistema tenta di aumentare eccessivamente il grado di multiprogrammazione, ossia cercando di eseguire più processi contemporaneamente per sfruttare al massimo la CPU e incrementare il throughput del sistema. 
+
+    Tuttavia, oltre una certa soglia, i processi passano più tempo a gestire i page fault generati che ad eseguire realmente il loro lavoro. Di conseguenza, la \textit{utilizzazione della CPU} diminuisce drasticamente e il \textit{throughput} del sistema crolla. 
+}
+
+\dfn{Relazione tra Grado di Multiprogrammazione e Thrashing}{
+    Il grado di multiprogrammazione è direttamente legato al rischio di thrashing. Aumentando il numero di processi che cercano di essere eseguiti contemporaneamente, cresce anche la probabilità che ognuno di essi abbia pochi frame disponibili. Questo può portare a una situazione in cui il sistema è sopraffatto dalla gestione dei page fault, riducendo di fatto l'efficienza complessiva. 
+
+    La relazione tra grado di multiprogrammazione e throughput diventa inversamente proporzionale oltre una certa soglia, con l'aumento della multiprogrammazione che inizialmente porta a un miglioramento delle prestazioni, ma che successivamente provoca un forte degrado delle stesse a causa del thrashing.
+}
+
+\begin{figure}[h] \centering \includegraphics[width=0.55\linewidth]{images/tharsing_multiporgGraph.png} \caption{10.20} \label{fig:10.20} \end{figure}
+
+\subsection{Cause del Thrashing}
+Se il livello di utilizzo della CPU di un sistema è troppo basso, lo si può alzare aumentando in grado di permettendo a più utenti di connettersi, e/o di lanciare un maggior numero di processi. In questo modo però, i nuovi processi incominciano a sottrarre pagine ai processi già presenti, per “farsi un po' di spazio”. Fino ad un certo punto l’aumento di processi è ben tollerato dal sistema, poiché ciascun processo ha comunque una quantità sufficiente di frame a disposizione da poter girare senza generare troppi page fault. Ma se si esagera, ci si può avvicinare alla soglia del thrashing: molti processi incominciano a generare dei page fault e, come conseguenza, vengono tolti dalla RQ e messi in una coda di wait in attesa della pagina mancante. Risultato? La RQ si svuota, e il livello di utilizzo della CPU scende. Beh, ma se la CPU è sotto-utilizzata, si può lanciare qualche altro processo, o permettere a qualche altro utente di collegarsi... E la situazione non fa che peggiorare!.\\
+Nei moderni sistemi time-sharing, il ciclo perverso è spesso innescato dagli utenti, che lanciano altri programmi senza attendere la fine di quelli già in esecuzione, sperando così di aumentare la percentuale del tempo di CPU globale che riescono ad usare a loro vantaggio.\\
+In definitiva quindi, il thrashing è una sorta di “ingolfamento” del sistema: vogliamo sfruttarlo al meglio “iniettando” più e più processi nel sistema, fino ad arrivare ad un punto in cui i processi si ostacolano a vicenda.\\
+La soluzione giusta sarebbe di diminuire il grado di multiprogrammazione temporaneamente, in modo che i processi non rimossi dalla MP abbiano il tempo di terminare correttamente prima di far (ri)partire gli altri.\\
+
+
+
+
