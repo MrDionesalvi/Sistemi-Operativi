@@ -939,7 +939,7 @@ Con un indirizzamento logico a 64 bit, anche la PT esterna diventa così grande 
     \item CPU a 32 bit \emph{Motorola 68030}: implementava uno schema di paginazione a 4 livelli.
 \end{itemize}
 
-\clm{Overhead della paginazione su architetture a 64 bit}{
+\clm{Overhead della paginazione su architetture a 64 bit}{}{
 In sistemi a 64 bit, nemmeno 4 livelli di paginazione risultano sufficienti. Per esempio, l'architettura \emph{UltraSPARC} richiede fino a 7 livelli di paginazione. Se una pagina non è disponibile nel \emph{TLB}, la traduzione da indirizzo logico a fisico può richiedere l'attraversamento di 7 livelli di pagine in RAM, causando un notevole overhead.
 }
 
@@ -971,7 +971,7 @@ Ogni indirizzo logico generato dalla CPU è quindi una tripla:
 Per generare l'indirizzo fisico, si cerca nella \emph{IPT} la coppia \(\langle \text{process-id}, \text{page-number} \rangle\). Se viene trovata nella \(i\)-esima entry, l'indirizzo fisico sarà \(\langle i, \text{offset} \rangle\).
 \end{quote}
 
-\clm{Vantaggi e svantaggi dell’IPT}{
+\clm{Vantaggi e svantaggi dell’IPT}{}{
 Utilizzare una \emph{IPT} permette di risparmiare spazio, ma può aumentare il tempo di traduzione degli indirizzi logici in fisici, in quanto:
 \begin{itemize}
     \item Per ottenere l’indirizzo fisico, è necessario scorrere la \emph{IPT} alla ricerca della entry contenente la coppia \(\langle \text{process-id}, \text{page-number} \rangle\), il che può richiedere centinaia o migliaia di accessi alla memoria principale (MP) se la \emph{IPT} è memorizzata in RAM.
