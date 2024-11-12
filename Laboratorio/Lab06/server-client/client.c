@@ -60,7 +60,7 @@ void print_message(MessageType type, const char *format, ...) {
 }
 
 // Struttura per i messaggi della coda
-struct mymsg { 
+struct mymsgg { 
     long mtype;   /* Tipo di messaggio */ 
     char mtext[100]; /* Corpo del messaggio */
 } msg;

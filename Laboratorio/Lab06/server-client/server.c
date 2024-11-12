@@ -23,7 +23,7 @@ void print_colored(const char* type, const char* format, ...) {
     // Assegna colore e icona in base al tipo di messaggio
     if (strcmp(type, "info") == 0) {
         color = COLOR_INFO;
-        icon = "[ℹ️]";
+        icon = "[ℹ️ ]";
     } else if (strcmp(type, "success") == 0) {
         color = COLOR_SUCCESS;
         icon = "[✅]";
@@ -47,7 +47,7 @@ void print_colored(const char* type, const char* format, ...) {
     printf("%s", COLOR_RESET);  // Reset colore
 }
 
-struct mymsg { 
+struct mymsgg { 
     long mtype;   /* Message type */ 
     char mtext[100]; /* Message body */
 } msg;
@@ -71,7 +71,7 @@ int main() {
     print_colored("success", "Message queue identifier written to msgq_id.txt.\n\n");
     srand(time(NULL));
 
-    struct mymsg response;
+    struct mymsgg response;
     while (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), 1, 0) != -1) {
         pid_t fork_pid;
         if (msg.mtype == 1 && strcmp(msg.mtext, "END") == 0) {
