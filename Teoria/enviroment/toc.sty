@@ -97,14 +97,17 @@
 
         \fancyhead[LE]{\nouppercase{\textbf{\textcolor{\chapterColor{\thechapter}}{\chaptername}}~ \thechapter~ |~ \leftmark}}
         \fancyhead[RO]{\nouppercase{ \rightmark}}
-        \fancyfoot[LE,RO]{\thepage}
+        \fancyfoot[L]{Dionesalvi}
+        \fancyfoot[R]{\thepage}
         \fancypagestyle{plain}{         
         \fancyhf{}
-        \fancyfoot[LE,RO]{\thepage}}    
+        \fancyfoot[L]{A cura di Paolo Dionesalvi}
+        \fancyfoot[R]{\thepage}}    
     \else          
         \renewcommand{\headrulewidth}{0pt}
         \fancyhf{}                  
         \textcolor{red}{\fancyhead[C]{\nouppercase{ \leftmark}}}
-        \fancyfoot[C]{\thepage}
+        \fancyfoot[L]{A cura di Paolo Dionesalvi}
+        \fancyfoot[R]{\thepage}
     \fi
 }

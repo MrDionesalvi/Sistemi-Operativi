@@ -498,5 +498,141 @@ In definitiva quindi, il thrashing è una sorta di “ingolfamento” del sistem
 La soluzione giusta sarebbe di diminuire il grado di multiprogrammazione temporaneamente, in modo che i processi non rimossi dalla MP abbiano il tempo di terminare correttamente prima di far (ri)partire gli altri.\\
 
 
+\subsection{Come combattere il Thrashing}
+In definitiva, quindi, il \textit{thrashing} rappresenta una sorta di “ingolfamento” del sistema: si tenta di sfruttare al massimo le risorse “iniettando” più processi possibili, ma si finisce per raggiungere un punto in cui i processi si ostacolano a vicenda.
 
+\nt{
+    La soluzione ottimale consiste nel ridurre temporaneamente il grado di multiprogrammazione. Così facendo, i processi ancora presenti in memoria possono completare correttamente la loro esecuzione, prima di permettere l'avvio (o il riavvio) di altri processi.
+}
 
+\clm{Frequenza accettabile dei page fault}{}{
+    È possibile stabilire, ad esempio in base ad osservazioni sperimentali, un livello “accettabile” di frequenza di page fault, per raggiungere le prestazioni desiderate:
+    \begin{itemize}
+        \item \textbf{Se la frequenza osservata è troppo bassa}, si possono rimuovere alcuni frame dai processi e aumentare il grado di multiprogrammazione.
+        \item \textbf{Se la frequenza osservata è troppo alta}, occorre diminuire il grado di multiprogrammazione e redistribuire i frame liberati tra i processi ancora attivi.
+    \end{itemize}
+}
+
+\nt{
+    Il \textit{thrashing} può essere prevenuto monitorando attentamente la frequenza dei page fault (come illustrato in figura 10.23).
+}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/frequenctOfPageFault.png} \caption{frequenctOfPageFault.png} \label{fig:10.23} \end{figure}
+
+Adottare una politica di sostituzione locale può contribuire a ridurre il rischio di thrashing, poiché i processi non possono sottrarsi le pagine tra loro. Se un singolo processo entra in thrashing, non danneggia gli altri, sebbene possa utilizzare intensivamente le risorse di I/O su disco.
+
+Tuttavia, se si assegnano troppi pochi frame a ciascun processo per aumentare eccessivamente il grado di multiprogrammazione, esiste il rischio che tutti i processi entrino in thrashing.
+
+\cor{Prevenzione ottimale del thrashing}{
+    La migliore prevenzione del thrashing è dotare il sistema di una quantità sufficiente di memoria principale.
+}
+
+\section{Dimensioni delle pagine}
+Sono sempre potenze di $2$; ma quanto dovrebbero essere grandi? 
+
+\begin{itemize}
+    \item \textbf{Pagine piccole} implicano:
+    \begin{itemize}
+        \item Tabelle delle pagine (PT) più grandi;
+        \item meno frammentazione interna;
+        \item peggiori prestazioni nell’uso dell'HD, poiché il \textit{seek} e la latenza del disco sono costanti (si vedrà meglio nel Capitolo 11);
+        \item in generale, un maggior numero di page fault (immaginiamo pagine di un solo byte in pure demand paging).
+    \end{itemize}
+    
+    \item \textbf{Pagine grandi} presentano le considerazioni opposte.
+\end{itemize}
+
+A causa della diminuzione del costo della RAM e dell’aumento degli spazi di indirizzamento fisico disponibili, la tendenza è quella di usare pagine sempre più grandi. Negli anni ’80, $4$ Kbyte era considerata la dimensione massima accettabile di una pagina, mentre oggi tale valore è normale, e spesso anche superato. 
+
+\nt{
+    L'aumento costante della quantità di RAM nei sistemi moderni ha fatto sì che, nel tempo, il problema del \textit{thrashing} e, più in generale, le problematiche legate alla memoria virtuale abbiano un impatto minore sulle prestazioni complessive dei sistemi.
+}
+
+\subsection{Struttura dei programmi}
+Il modo in cui i programmi utilizzano i dati influisce significativamente sul numero di page fault generati.
+
+\begin{itemize}
+    \item Ad esempio, gli \textbf{array bidimensionali} sono allocati per riga: se scriviamo codice che accede agli elementi per colonna, aumentiamo il rischio di page fault. Supponiamo che una pagina contenga esattamente una riga dell'array; cosa accade se è allocato un solo frame per contenere una parte dell’array?
+
+    \item Le \textbf{tabelle hash} possono offrire prestazioni scarse con la memoria virtuale, poiché anche dati concettualmente contigui vengono memorizzati in modo sparpagliato.
+\end{itemize}
+
+Consideriamo l'array bidimensionale:
+
+\[
+\texttt{char A[1024][1024];}
+\]
+
+Ogni riga è memorizzata in una pagina, e all'array è assegnato un solo frame (di $1024$ byte) in RAM. L’array è memorizzato per righe:
+\[
+\texttt{A[0][0], A[0][1], A[0][2], \ldots, A[0][1023], A[1][0], \ldots}
+\]
+
+\begin{itemize}
+    \item \textbf{Programma 1}: 
+    \begin{verbatim}
+        for (j = 0; j < 1024; j++)
+            for (i = 0; i < 1024; i++) A[i][j] = '0';
+    \end{verbatim}
+    
+    \item \textbf{Programma 2}:
+    \begin{verbatim}
+        for (i = 0; i < 1024; i++)
+            for (j = 0; j < 1024; j++) A[i][j] = '0';
+    \end{verbatim}
+\end{itemize}
+
+\qs{}{
+    Quale programma genera meno page fault? E quanti?
+    \newline
+    Quale programma genera più page fault? E quanti?
+}
+
+\nt{
+    Il \textbf{Programma 1} genera più fault, perchè accede prima colonna per colonna, $(1024*1024)$ page fault.\\
+    Il \textbf{Programma 2} genera meno fault, perchè accede prima riga per riga, $(1024)$ page fault.
+}
+
+\section{Gestione nei Sistemi Operativi}
+\subsection{Windows}
+In Windows 10 viene implementata la \textit{demand paging with clustering}: quando una pagina viene caricata in memoria, vengono caricate anche alcune pagine adiacenti, che si presume possano essere usate a breve.
+
+Alla creazione di un processo, vengono assegnati a quest'ultimo due numeri:
+\begin{itemize}
+    \item \textbf{Insieme di lavoro minimo}: il numero minimo di pagine che il sistema operativo garantisce di allocare in RAM per quel processo (di solito, 50);
+    \item \textbf{Insieme di lavoro massimo}: il numero massimo di pagine che il sistema operativo allocherà in RAM per quel processo (di solito, 345).
+\end{itemize}
+
+Il sistema operativo mantiene anche una lista di \textbf{frame liberi}, con un numero minimo di frame da mantenere liberi in lista.
+
+\begin{itemize}
+    \item Se un processo $P$ genera un page fault e non ha ancora raggiunto il suo insieme di lavoro massimo, la pagina mancante viene portata in RAM e assegnata a un frame libero.
+    \item Se invece $P$ ha raggiunto il suo insieme di lavoro massimo, viene scelta una \textbf{pagina vittima} tra quelle di $P$, quindi viene applicata una politica di sostituzione locale delle pagine.
+\end{itemize}
+
+Se il numero di frame liberi in RAM scende al di sotto del limite minimo, viene avviata una procedura per liberare spazio:
+\begin{itemize}
+    \item Ciascun processo che ha in RAM un numero di pagine superiore al proprio insieme di lavoro minimo vedrà rimosse dalla RAM tutte le pagine in eccesso.
+    \item Nei sistemi con processore Intel, per decidere quali pagine rimuovere viene utilizzato l’\textbf{algoritmo della seconda chance}.
+\end{itemize}
+
+\subsection{Solaris}
+\nt{
+    Solaris utilizza una normale \textit{paginazione su richiesta}, assegnando un frame libero in caso di page fault. Un parametro, \texttt{lostfree}, associato all'elenco dei frame liberi e pari di solito a $1/64$ del numero di frame in cui è suddivisa la RAM, indica il numero minimo di frame liberi desiderati.
+}
+
+Ogni $1/4$ di secondo, il sistema operativo controlla se il numero di frame liberi è inferiore a \texttt{lostfree}. In tal caso, viene attivato il processo \textbf{pageout}, che funziona in due fasi applicando una variante dell'algoritmo della seconda chance:
+
+\begin{itemize}
+    \item \textbf{Prima fase}: \texttt{pageout} scorre tutte le pagine allocate in RAM azzerando il bit di riferimento di ciascuna.
+    \item \textbf{Seconda fase}: scorre di nuovo tutte le pagine e quelle con bit di riferimento ancora a $0$ vengono considerate riutilizzabili. Le pagine con \textit{dirty bit} a $1$ vengono salvate prima di essere effettivamente riutilizzate.
+\end{itemize}
+
+Se un processo accede a una pagina marcata come "riutilizzabile" e in attesa di essere salvata, la pagina viene semplicemente riassegnata a quel processo.
+
+Il tempo tra le due scansioni effettuate da \texttt{pageout} può variare in base ai parametri del sistema operativo, ma è generalmente dell'ordine di alcuni secondi.
+
+\begin{itemize}
+    \item Se \texttt{pageout} non riesce a mantenere la quantità di frame liberi a un livello accettabile (stabilito dai parametri di sistema), potrebbe indicare che si sta verificando il fenomeno del \textbf{thrashing}.
+    \item In tal caso, il sistema operativo può decidere di rimuovere tutte le pagine di un processo, scegliendo tra quelli che sono rimasti inattivi per il tempo più lungo.
+\end{itemize}
