@@ -125,7 +125,7 @@ Assumendo \textit{ma} = 200 nanosecondi, otteniamo (valori espressi in nanosecon
     \nt{In questo caso, l’esecuzione rallenta di oltre 40 volte!}
 }
 
-\qs{Degrado massimo del 10\%}{}{
+\qs{Degrado massimo del 10\%}{
     Per avere un degrado massimo del 10\%, la probabilità \( p \) deve rispettare la seguente disuguaglianza:
     \[
     \text{eat} = 220 > 200 + 8 \times 10^6 \times p
@@ -139,10 +139,11 @@ Assumendo \textit{ma} = 200 nanosecondi, otteniamo (valori espressi in nanosecon
     Questo significa che non ci dovrebbero essere più di un page fault ogni 400.000 accessi in memoria.
 }
 
-\qs{400.000 accessi: sono molti o pochi?}{}{
+\qs{400.000 accessi: sono molti o pochi?}{
     Se un processo esegue circa un milione di istruzioni, quanti accessi in RAM genera approssimativamente?
     \nt {
-
+        1 milione di istruzioni = 1 milione di accessi in RAM (ogni istruzione richiede almeno un accesso in RAM).
+        Alcune istruzioni possono richiedere più accessi in RAM, ma 1 milione è un buon punto di partenza.
     }
 }
 
@@ -217,7 +218,7 @@ Le pagine di codice non devono essere salvate, tanto ce n’è comunque una copi
 
 
 \section{Sostituzione delle pagine}
-\qs{}{Cosa succede se si verifica un page fault e non c'è alcun frame libero in RAM?}{
+\qs{Cosa succede se si verifica un page fault e non c'è alcun frame libero in RAM?}{
     In questo caso, il sistema operativo esegue i seguenti passi:
     \begin{itemize}
         \item Seleziona una pagina "vittima" da rimuovere.
@@ -259,7 +260,7 @@ Al contrario, se la pagina vittima scelta non verrà mai più utilizzata, non sa
     Un buon algoritmo di sostituzione minimizza il numero di \textit{page fault}. In letteratura, questi algoritmi sono spesso chiamati \textit{algoritmi di rimpiazzamento delle pagine}.
 }
 
-\qs{Come possiamo valutare l'efficacia di diversi algoritmi di sostituzione delle pagine?}{}{
+\qs{Come possiamo valutare l'efficacia di diversi algoritmi di sostituzione delle pagine?}{
     Si può valutare l'efficacia tramite sequenze di riferimenti in memoria principale:
     \begin{itemize}
         \item \textbf{generate casualmente}, oppure
@@ -276,7 +277,7 @@ Al contrario, se la pagina vittima scelta non verrà mai più utilizzata, non sa
     Durante l’esecuzione, la CPU ha generato una sequenza di indirizzi logici che indirizzano le pagine in quest'ordine.
 }
 
-\qs{Quanti \textit{page fault} genera questa sequenza di riferimento?}{}{
+\qs{Quanti \textit{page fault} genera questa sequenza di riferimento?}{
     Supponiamo di avere a disposizione un solo frame in memoria. Con questa ipotesi, la sequenza provoca 8 \textit{page fault}.
     
     Consideriamo invece la seguente sequenza:
