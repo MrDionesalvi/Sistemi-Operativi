@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #define ddErrExit(msg) {perror(msg); exit(EXIT_FAILURE);}
+#define KEY_VALUE 1234
 
 union semunn {
     int val;
@@ -19,12 +20,9 @@ union semunn {
 int main(int argc, char *argv[]){
     int semid;
     union semun arg;
-    semid = semget(IPC_PRIVATE, 1, S_IRUSR | S_IWUSR);
+    semid = semget(KEY_VALUE, 1, IPC_CREAT | IPC_EXCL | 0666);
     if (semid == -1)
         ddErrExit("semid");
-    arg.val = 0;
-    if (semctl(semid, /* semnum= */ 0, SETVAL, arg) == -1)
-        ddErrExit("semctl");
     printf("creato e inizializzato semaforo con ID = %d\n", semid);
     exit(EXIT_SUCCESS);
 }
