@@ -57,21 +57,21 @@ int main(int argc, char *argv[]){
     struct mymsgg *msg;
 
     msg = shmat(shm_id, NULL, 0);
-
+    int bytesRead = 0;
     while (1) {
         reserveSem(semid, 0);
         if (msg->mtype == 0) {
-            printf("[Lettore] Message received eof: %s\n", msg->mtext);
             releaseSem(semid, 0);
             break;
         }
-        printf("[Lettore] Message received: %s\n", msg->mtext);
+        bytesRead+=strlen(msg->mtext);
         // Clean the message
         msg->mtype = 0;
         memset(msg->mtext, 0, sizeof(msg->mtext));
         releaseSem(semid, 1);
     }
     printf("\n");
+    printf("[Lettore] Bytes read: %d\n", bytesRead);
     printf("[Lettore] Reader finished reading\n");
     exit(EXIT_SUCCESS);
 }

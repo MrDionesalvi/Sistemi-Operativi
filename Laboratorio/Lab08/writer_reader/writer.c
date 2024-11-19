@@ -60,15 +60,16 @@ int main(int argc, char *argv[]){
     msg = shmat(shm_id, NULL, 0);
 
     int still_running = 1;
+    int bytes_sent = 0;
     while(still_running){
         reserveSem(semid, 1);
         if(fscanf(stdin, "%99s", msg->mtext) != EOF){
             msg->mtype = 1;
-            printf("[Scrittore] Inserisco messaggio: %s\n", msg->mtext);
+            bytes_sent += strlen(msg->mtext);
         }
         else{
             msg->mtype = 0;
-            printf("[Scrittore] Inserisco messaggio: EOF\n");
+            printf("[Writer] EOF\n");
             still_running = 0;
         }
         releaseSem(semid, 0);
@@ -80,6 +81,8 @@ int main(int argc, char *argv[]){
     if(shmctl(shm_id, IPC_RMID, NULL) == -1){
         ddErrExit("shmctl");
     }
-    printf("[Scrittore] Programma terminato con successo\n");
+    shmdt(msg);
+    printf("[Writer] Totale byte inviati: %d\n", bytes_sent);
+    printf("[Writer] Programma terminato con successo\n");
     exit(EXIT_SUCCESS);
 }
