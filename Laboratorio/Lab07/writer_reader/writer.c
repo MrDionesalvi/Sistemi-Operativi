@@ -10,9 +10,7 @@
 #include <sys/msg.h>
 #include <string.h>
 
-#define ddErrExit(msg) {perror(msg); exit(EXIT_FAILURE);}
-#define WRITE_SEM 333
-#define READ_SEM 444
+#include "server.h"
 
 int initSemAvailable(int semId, int semNum) {
     union semun arg;
@@ -58,22 +56,15 @@ int main(int argc, char *argv[]){
     initSemInUse(semid_writer, 0);
 
     int msqid;
-    msqid = msgget(IPC_PRIVATE, IPC_CREAT | 0666);
+    msqid = msgget(MSGQ_ID, IPC_CREAT | 0666);
     if (msqid == -1)
         ddErrExit("msgget");
-    
-    FILE *f = fopen("msgq_id.txt", "w");
-    if (f == NULL) {
-        ddErrExit("fopen");
-        return 1;
-    }
-    fprintf(f, "%d", msqid);
-    fclose(f);
     printf("Creato e inizializzato coda messaggi con ID = %d\n", msqid);
 
     //char buffer[99];
     struct msqid_ds buf;
-    struct mymsg msg;
+    // TODO: mymsg is [1] char text, i'm using invalid size
+    struct mymsgg msg;
     while(fscanf(stdin, "%s", msg.mtext) != EOF){
         reserveSem(semid, 0);
         msg.mtype = 1;
