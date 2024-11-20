@@ -13,3 +13,4 @@ Teoria/chapters/*.aux
 Laboratorio/Lab06/server-client/msgq_id.txt
 Teoria/main.fdb_latexmk
 Teoria/main.fls
+Teoria/disclaimer/*.aux

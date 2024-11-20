@@ -262,3 +262,254 @@ Differenti schemi di implementazione delle idee sopra descritte hanno portato al
     \end{itemize}
 }
 \begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/raid_livelloZero.png} \caption{Raid Livello Zero} \label{fig:2-23a} \end{figure}
+
+\subsection{RAID di Livello 1: Mirroring}
+
+\dfn{RAID Livello 1}{
+    Un'architettura RAID in cui ogni disco di dati $D$ è affiancato da un disco di mirroring che contiene una copia esatta dei dati memorizzati in $D$. La configurazione più semplice prevede l'utilizzo di due dischi: uno contenente i dati e l'altro la copia esatta.
+}
+
+\begin{itemize}
+    \item La duplicazione dei dati garantisce una maggiore affidabilità:
+    \begin{itemize}
+        \item Se un disco si rompe, il sistema utilizza il disco di mirroring senza perdita di dati o interruzione del servizio.
+    \end{itemize}
+    \item \textbf{Prestazioni:} 
+    \begin{itemize}
+        \item La scrittura dei dati è leggermente rallentata, poiché deve avvenire contemporaneamente su due dischi.
+        \item La lettura è più veloce, dato che i dati possono essere letti da entrambi i dischi in parallelo.
+    \end{itemize}
+    \item \textbf{Limiti:} Il costo di implementazione è elevato, poiché richiede il raddoppio del numero di dischi.
+\end{itemize}
+
+\begin{figure}[h] \centering \includegraphics[width=0.20\linewidth]{images/raid_mirro1.png} \caption{Raid Mirror} \end{figure}
+
+\ex{Combinazione RAID Livello 0+1}{
+    Unendo le caratteristiche dello striping (RAID 0) e del mirroring (RAID 1), si ottengono configurazioni RAID ibride che massimizzano sia le prestazioni che l'affidabilità.
+}
+
+\subsection{RAID di Livello 01: Striping + Mirroring}
+
+\dfn{RAID Livello 01}{
+    Un'architettura RAID che combina lo striping (livello 0) e il mirroring (livello 1). 
+    \begin{itemize}
+        \item I dati sono suddivisi in \textit{strip} distribuiti su più dischi (come nel RAID 0).
+        \item Ogni disco è duplicato da un disco di mirroring (come nel RAID 1).
+    \end{itemize}
+}
+
+\begin{itemize}
+    \item \textbf{Affidabilità:} 
+    \begin{itemize}
+        \item Quando un disco si rompe, il sistema RAID utilizza il disco di mirroring per accedere ai dati, mantenendo il sistema operativo attivo.
+        \item Un disco rotto può essere sostituito, e i dati saranno copiati automaticamente dal "gemello" (se è disponibile uno \textit{spare disk}).
+    \end{itemize}
+    \item \textbf{Prestazioni:}
+    \begin{itemize}
+        \item La lettura di un blocco di dati che coinvolge $n$ strip può essere eseguita con $n$ letture in parallelo, sfruttando sia i dischi primari sia quelli di mirroring.
+    \end{itemize}
+    \item \textbf{Costo:} È una delle soluzioni RAID più costose, poiché richiede la duplicazione di tutti i dischi.
+\end{itemize}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/raid_mirror01.png} \caption{Raid Mirro 0+1} \end{figure}
+
+\clm{Applicazioni del RAID 01}{}{
+    Il RAID di livello 01 è ideale per contesti in cui l'affidabilità è fondamentale, come la gestione di dati finanziari o bancari. 
+    \begin{itemize}
+        \item Aumentando il numero di dischi coinvolti, migliorano le prestazioni complessive del sistema.
+    \end{itemize}
+}
+
+\subsection{RAID Livello 10 (Mirroring + Striping)}
+
+\dfn{RAID Livello 10}{
+    Una configurazione RAID che combina il mirroring e lo striping in modo inverso rispetto al livello 01:
+    \begin{itemize}
+        \item Il mirroring viene eseguito per primo, creando coppie di dischi speculari.
+        \item Successivamente, viene applicato lo striping alle coppie di dischi.
+    \end{itemize}
+}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/raid_mirror10.png} \caption{Raid 10} \end{figure}
+
+\begin{itemize}
+    \item \textbf{Prestazioni:} Simili a quelle del RAID livello 01.
+    \item \textbf{Affidabilità:} 
+    \begin{itemize}
+        \item Vantaggi nel recupero dei dati in caso di guasti, poiché ogni coppia di dischi può essere gestita indipendentemente.
+    \end{itemize}
+\end{itemize}
+
+\subsection{RAID Livello 4 (Striping con Parità)}
+
+\dfn{RAID Livello 4}{
+    Una configurazione RAID che utilizza lo striping a livello di blocchi e calcola uno strip di parità per consentire il recupero dei dati in caso di guasto.
+    \begin{itemize}
+        \item Gli strip di parità sono memorizzati in un disco dedicato.
+        \item Ogni strip di parità è calcolato usando i corrispondenti strip degli altri dischi.
+    \end{itemize}
+}
+
+\begin{itemize}
+    \item \textbf{Vantaggi:}
+    \begin{itemize}
+        \item Risparmio di dischi rispetto al RAID 01.
+    \end{itemize}
+    \item \textbf{Svantaggi:}
+    \begin{itemize}
+        \item Scritture più lente, poiché ogni modifica richiede l'aggiornamento dello strip di parità.
+        \item Il disco di parità può diventare un collo di bottiglia, aumentando la probabilità di guasti.
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/raid_level4.png} \caption{Raid livello 4} \end{figure}
+
+\subsection{RAID Livello 5 (Striping con Parità Distribuita)}
+
+\dfn{RAID Livello 5}{
+    Una configurazione RAID simile al livello 4, ma con gli strip di parità distribuiti tra tutti i dischi, riducendo il carico sul disco di parità.
+    \begin{itemize}
+        \item Ogni disco contiene sia strip di dati sia strip di parità.
+    \end{itemize}
+}
+
+\begin{itemize}
+    \item \textbf{Vantaggi:}
+    \begin{itemize}
+        \item Migliore distribuzione del carico di scrittura.
+        \item Ottima combinazione di prestazioni, affidabilità e capacità di memorizzazione.
+    \end{itemize}
+    \item \textbf{Limiti:}
+    \begin{itemize}
+        \item Ricostruzione complessa in caso di guasto, data la distribuzione degli strip di parità.
+    \end{itemize}
+    \item \textbf{Utilizzo:} Livello RAID più usato per applicazioni generiche.
+\end{itemize}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/raid_level5.png} \caption{Raid Livello 5} \end{figure}
+
+\subsection{RAID Livello 6 (Striping con Doppia Parità Distribuita)}
+
+\dfn{RAID Livello 6}{
+    Una configurazione RAID simile al livello 5, ma con due livelli di parità distribuiti tra i dischi, permettendo di resistere al guasto simultaneo di due dischi.
+}
+
+\begin{itemize}
+    \item \textbf{Vantaggi:}
+    \begin{itemize}
+        \item Maggiore affidabilità rispetto al RAID 5.
+    \end{itemize}
+    \item \textbf{Svantaggi:}
+    \begin{itemize}
+        \item Richiede un disco in più rispetto al RAID 5 per memorizzare la stessa quantità di dati.
+        \item Maggiore overhead computazionale.
+    \end{itemize}
+    \item \textbf{Utilizzo:} Poco usato, poiché la rottura contemporanea di due dischi è un evento raro.
+\end{itemize}
+
+\subsection{Ricostruzione di Dati Persi con la Parità}
+
+\dfn{Parità}{
+    Una tecnica che consente di recuperare i dati di un disco guasto usando la parità bit a bit calcolata con un'operazione EX-OR tra le stringhe binarie memorizzate nei vari dischi.
+    \begin{itemize}
+        \item La parità è definita come:
+        \[
+        \text{parità} = \text{stringa}_0 \oplus \text{stringa}_1 \oplus \cdots \oplus \text{stringa}_m
+        \]
+        \item Se un disco si rompe, il suo contenuto può essere ricostruito:
+        \[
+        \text{stringa}_j = \text{parità} \oplus \text{stringa}_0 \oplus \text{stringa}_1 \oplus \cdots \oplus \text{stringa}_{j-1} \oplus \text{stringa}_{j+1} \oplus \cdots \oplus \text{stringa}_m
+        \]
+    \end{itemize}
+}
+
+\ex{Esempio di Recupero con Parità}{
+    Consideriamo tre stringhe binarie di 8 bit:
+    \begin{align*}
+    a & = 01100011 \\
+    b & = 10101010 \\
+    c & = 11001010 \\
+    \end{align*}
+    La parità calcolata è:
+    \[
+    p = a \oplus b \oplus c = 00000011
+    \]
+    Se si perde la stringa $a$, possiamo ricostruirla:
+    \[
+    a = p \oplus b \oplus c = 01100011
+    \]
+}
+
+\section{Memorie a Stato Solido (SSD)}
+
+\dfn{Memorie a Stato Solido}{
+    Memorie permanenti e riscrivibili basate su tecnologia flash, utilizzate come supporto di memoria secondaria. Caratteristiche principali:
+    \begin{itemize}
+        \item Organizzate in pagine da 2 a 16 Kbyte.
+        \item Operazioni di lettura/scrittura coinvolgono l'intera pagina.
+        \item Limite di circa 100.000 riscritture per pagina.
+        \item Prima della riscrittura, le pagine devono essere cancellate tramite un processo detto \textit{flashing}.
+    \end{itemize}
+}
+
+\begin{itemize}
+    \item \textbf{Utilizzo:}
+    \begin{itemize}
+        \item Dispositivi mobili: smartphone, tablet.
+        \item Computer, spesso nei portatili di fascia alta:
+        \begin{itemize}
+            \item Come sostituto del disco rigido per aumentare velocità e leggerezza.
+            \item Come complemento al disco rigido.
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Tipi di supporto:}
+    \begin{itemize}
+        \item \textbf{SSD (Solid State Disk):} Montati su schede o contenitori installabili nel computer.
+        \item \textbf{Pen Drive:} Incapsulati in contenitori rimuovibili con connessione USB.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Confronto tra Tipi di Memorie}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Caratteristica} & \textbf{Hard Disk} & \textbf{Flash Memory} & \textbf{RAM} \\
+        \hline
+        \textbf{Costo per GB} & $\sim$ 0,015\$ & $\sim$ 0,05-0,1\$ & $\sim$ 2-4\$ \\
+        \hline
+        \textbf{Velocità in Lettura (T = RAM)} & $\sim$ 1000 × T & $\sim$ 4 × T & T \\
+        \hline
+        \textbf{Velocità in Scrittura (T = RAM)} & $\sim$ 1000 × T & 10-100 × T & T \\
+        \hline
+    \end{tabular}
+    \caption{Confronto tra Hard Disk, Memoria Flash e RAM.}
+    \label{tab:memorie}
+\end{table}
+
+\subsection{Utilizzo degli SSD}
+
+\begin{itemize}
+    \item \textbf{Sostituzione dell'hard disk:}
+    \begin{itemize}
+        \item Maggiore velocità di accesso.
+        \item Minore peso per dispositivi portatili.
+    \end{itemize}
+    \item \textbf{Combinazione con hard disk:}
+    \begin{itemize}
+        \item \textit{Cache permanente:} Collocata tra l'hard disk e la RAM.
+        \item \textit{Secondo hard disk:} Utilizzato per:
+        \begin{itemize}
+            \item Sistema operativo.
+            \item Applicativi.
+            \item File più utilizzati e area di swap.
+        \end{itemize}
+        Gli altri file rimangono memorizzati sull'hard disk.
+    \end{itemize}
+    \item \textbf{Politica di Accesso:}
+    \begin{itemize}
+        \item Accesso completamente diretto.
+        \item Di solito gestito con politica \textit{First Come, First Served (FCFS)}.
+    \end{itemize}
+\end{itemize}
