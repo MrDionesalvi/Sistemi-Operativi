@@ -22,10 +22,16 @@ typedef struct my_data {
 } data;
 
 int main(int argc, char const *argv[]){
-    int shmid, semid;
+    int shmid;
     shmid = shmget(SHM_ID, sizeof(data), IPC_CREAT | IPC_EXCL | 0666);
-    if(errno == EEXIST) ddErrExit("shmget");
-    if(shmid == -1) ddErrExit("shmget");
+    if(shmid == -1){
+        if(errno == EEXIST){
+            shmid = shmget(SHM_ID, sizeof(data), 0);
+            if(shmid == -1) ddErrExit("shmget");
+        } else {
+            ddErrExit("shmget");
+        }
+    }
 
     data *d = (data *)shmat(shmid, NULL, 0);
     if(d == (void *)-1) ddErrExit("shmat");
