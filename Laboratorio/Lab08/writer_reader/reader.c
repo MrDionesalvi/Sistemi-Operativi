@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
     msg = shmat(shm_id, NULL, 0);
     int bytesRead = 0;
     while (1) {
-        reserveSem(semid, 0);
+        reserveSem(semid, 0); // Richiesta di lettura
         if (msg->mtype == 0) {
             releaseSem(semid, 0);
             break;
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
         // Clean the message
         msg->mtype = 0;
         memset(msg->mtext, 0, sizeof(msg->mtext));
-        releaseSem(semid, 1);
+        releaseSem(semid, 1); // Possibilità di scrittura
     }
     printf("\n");
     printf("[Lettore] Bytes read: %d\n", bytesRead);
