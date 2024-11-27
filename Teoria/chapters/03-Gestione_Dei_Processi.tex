@@ -124,8 +124,7 @@ Per commutare la CPU tra due processi, il sistema operativo deve:
     \item Riprendere il controllo della CPU (ad esempio attraverso il meccanismo del \textit{Timer} visto nel capitolo 1).
     \item Con l'aiuto dell'hardware della CPU, salvare lo stato corrente della computazione del processo che lascia la CPU, ossia copiare il valore del \textit{Program Counter} (PC) e degli altri registri nel suo \textit{Process Control Block} (PCB).
     \item Scrivere nel PC e nei registri della CPU i valori relativi contenuti nel PCB del processo utente scelto per entrare in esecuzione.
-\end{enumerate}\\
-
+\end{enumerate}
 Questa operazione prende il nome di: \textbf{cambio di contesto}, o \textit{context switch}.
 
 Notate che, tecnicamente, anche il punto 1 è già di per sé un \textit{context switch}.
@@ -234,7 +233,7 @@ int main() {
         /* processo padre */
         printf("sono il padre, aspetto il figlio");
         childpid = wait(NULL);
-        printf("il processo figlio è terminato");
+        printf("il processo figlio e' terminato");
         exit(0);
     }
 }

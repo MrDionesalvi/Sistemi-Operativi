@@ -177,8 +177,7 @@ Esempio:
 Si può dimostrare che l'algoritmo \textit{Shortest Job First} (SJF) è ottimale: spostando un processo breve prima di uno di lunga durata (anche se quest’ultimo è arrivato prima) si migliora l'attesa del processo breve più di quanto si peggiori quella del processo lungo. Di conseguenza, il tempo medio di attesa diminuisce, così come il \textit{turnaround time}.
 
 SJF è ottimale: nessun altro algoritmo di \textit{scheduling} può produrre un tempo di attesa medio e un \textit{turnaround time} medio migliori. Tuttavia, c'è un problema...\\
-Purtroppo, la durata del prossimo burst di CPU di un processo non è nota, il che rende l'algoritmo \textit{Shortest Job First} (SJF) non implementabile nella sua forma pura. SJF può al massimo essere approssimato utilizzando medie pesate per stimare la durata del prossimo burst di CPU di un processo, basandosi sulla durata dei burst di CPU precedenti.\nt{Da rivededere!!!!}\\
-
+Purtroppo, la durata del prossimo burst di CPU di un processo non è nota, il che rende l'algoritmo \textit{Shortest Job First} (SJF) non implementabile nella sua forma pura. SJF può al massimo essere approssimato utilizzando medie pesate per stimare la durata del prossimo burst di CPU di un processo, basandosi sulla durata dei burst di CPU precedenti.\nt{Da rivededere!!!!}
 Lo \textit{scheduling} viene quindi eseguito sulla base di queste stime, fatte per tutti i processi nella \textit{Ready Queue} in un dato momento.\\
 In sostanza, il \textit{First Come, First Served} (FCFS) è il peggiore degli algoritmi ragionevoli: funziona, ma spesso fornisce tempi medi di attesa e di \textit{turnaround} pessimi.\\
 

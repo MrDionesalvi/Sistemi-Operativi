@@ -35,7 +35,7 @@ Nessun altro processo ha accesso allo spazio di indirizzamento logico di $P$, qu
 
 \section{Processo Multi-Thread}
 Un \textbf{processo Multi-Thread} (o \textbf{Multi-Threaded}) è invece composto da più thread di computazione, detti \textit{peer thread}. Un processo multi-threaded è anche detto \textit{task} (Fig. 4.1).
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/thread_example.png} \caption{thread_example} \label{fig:4.1a} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/thread_example.png} \caption{thread\_example} \label{fig:4.1a} \end{figure}
 
 \begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/MultiThreadExample.png} \caption{MultiThreadExample.png} \label{fig:4.2} \end{figure}
 \dfn{Processo Multi-Thread}{
@@ -159,7 +159,7 @@ L'introduzione del \textbf{Simultaneous Multi-Threading} può generare confusion
 \section{Ma l'SMT è sempre vantaggioso?}
 \textbf{Si}: ecco lo speed-up ottenuto su uno dei core di una CPU i7 nel passare da un solo thread a 2, per diversi benchmarks.\\
 Il dato “Energy efficiency” ci dice se l’introduzione dell’SMT è vantaggiosa dal punto di vista dell’energia consumata. Un valore superiore a 1.0 significa che l’SMT riduce il tempo di esecuzione più di quanto aumenti i consumi.
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/smt_benchmark.png} \caption{smt_benchmark} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/smt_benchmark.png} \caption{smt benchmark} \end{figure}
 
 \qs{difficile}{ Nessuna CPU implementa una forma di Simultaneous Multi-Processing, in cui cioè istruzioni appartenenti a processi diversi vengono eseguite in parallelo all’interno dello stesso core. Perché?}
 \nt{Due processi non condividono lo stesso spazio di indirizzamento, quindi non condiviono la stessa tabella delle pagine .\\
