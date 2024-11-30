@@ -287,3 +287,167 @@ In una directory Unix, ogni file è rappresentato da una struttura come segue:
 Questa organizzazione consente una gestione efficiente e ordinata dei file.
 }
 
+\subsubsection{Organizzazione degli i-node in Unix}
+Per tenere traccia di tutti i blocchi di dati di un file, ogni \textbf{i-node} in Unix memorizza diversi puntatori organizzati secondo uno schema gerarchico:
+\begin{itemize}
+    \item \textbf{10 puntatori diretti}: ciascuno punta direttamente a un blocco di dati del file.
+    \item \textbf{1 puntatore single indirect}: punta a un blocco indice, il quale contiene a sua volta puntatori a blocchi di dati del file.
+    \item \textbf{1 puntatore double indirect}: punta a un blocco indice, il quale contiene puntatori ad altri blocchi indice, ognuno dei quali punta a blocchi di dati del file.
+    \item \textbf{1 puntatore triple indirect}: punta a un blocco indice, che contiene puntatori ad altri blocchi indice, ciascuno dei quali punta a ulteriori blocchi indice che, infine, contengono i puntatori ai blocchi di dati del file.
+\end{itemize}
+
+\qs{}{
+Se i blocchi sono da 1024 byte e ogni numero di blocco è rappresentato da 32 bit (4 byte), qual è la dimensione massima che un file può raggiungere con questo schema?
+}
+
+\cor{Formula della dimensione massima}{
+La dimensione massima del file può essere calcolata con la seguente formula:
+\[
+\text{MaxSize} = 10 \times 1024 + 256 \times 1024 + 256^2 \times 1024 + 256^3 \times 1024 \quad \text{(in byte)}.
+\]
+}{}
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/i_node_indicizzati.png} \caption{Allocazione indicizzata: gli i-node} \label{fig:14.8} \end{figure}
+
+\subsection{Il File System NTFS (New Technology File System)}
+\subsubsection{Organizzazione e struttura di base}
+NTFS, utilizzato dai sistemi Windows (da XP in poi), adotta un approccio simile all'allocazione indicizzata con uno schema concatenato. Le sue principali caratteristiche sono:
+\begin{itemize}
+    \item Ogni file è descritto da un elemento di dimensione fissa (da 1 a 4 Kbyte, configurabile all’atto della creazione del file system).
+    \item Tutti gli elementi del file system sono memorizzati in una struttura chiamata \textbf{master file table (MFT)}, situata nei primi blocchi del disco e gestita esclusivamente dal sistema operativo.
+    \item Il numero di un elemento, detto \textbf{file reference}, è associato al nome del file nella directory che lo contiene.
+\end{itemize}
+
+\subsubsection{Contenuto di un elemento}
+Un elemento NTFS contiene:
+\begin{itemize}
+    \item Gli \textbf{attributi del file}, tra cui il proprietario, permessi di accesso, dimensioni correnti, date di creazione, accesso, modifica, ecc.
+    \item Se il file è molto piccolo, anche i \textbf{dati del file} possono essere contenuti direttamente nell’elemento:
+    \begin{itemize}
+        \item Questo rende l’accesso al file molto efficiente, poiché è sufficiente leggere l’elemento per ottenere sia gli attributi che i dati.
+    \end{itemize}
+    \item Se il file è più grande, l’elemento contiene:
+    \begin{itemize}
+        \item Più puntatori a \textbf{cluster} del disco contenenti i dati del file.
+        \item Eventualmente, un puntatore ad un ulteriore blocco di puntatori (schema indicizzato concatenato).
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Efficienza e caching}
+L’efficienza nell’uso del file system dipende anche dal sistema operativo, che implementa un sistema di \textbf{caching} in memoria primaria dei file e dei loro attributi più usati. Questo approccio prevede che:
+\begin{itemize}
+    \item Tutte le operazioni sui file e l’aggiornamento degli attributi vengano effettuati accedendo alla copia in RAM dei dati e degli attributi del file.
+    \item Il sistema operativo si occupi di mantenere la consistenza tra i dati in RAM e quelli in memoria secondaria, salvando periodicamente le informazioni dal cache sul disco.
+\end{itemize}
+
+\section{Hard Link e Symbolic Link in Unix}
+
+\subsection{Hard Link (Link Fisici)}
+In Unix, un file è identificato univocamente dall'\textbf{i-node}, che contiene tutte le informazioni relative al file:
+\begin{itemize}
+    \item Attributi del file (proprietario, permessi, date, ecc.).
+    \item Puntatori ai blocchi di dati del file.
+\end{itemize}
+Il numero dell'i-node (simile a un PID per i processi) identifica univocamente il file all'interno del file system. Tuttavia, per comodità, i file vengono identificati dagli utenti attraverso \textbf{nomi} all'interno delle directory. Ogni nome di file associato a un numero di i-node è definito \textbf{hard link}.
+
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/i_node_liinkfile.png} \caption{I-Node} \label{fig:14.4b} \end{figure}
+
+\subsubsection{Caratteristiche principali degli hard link}
+\begin{itemize}
+    \item Ogni file regolare (non una directory) può avere più hard link, ossia può essere referenziato da più nomi in directory diverse o nella stessa directory (a condizione che i nomi siano diversi).
+    \item Gli hard link a un file sono indistinguibili fra loro.
+    \item Il numero degli hard link associati a un i-node è tenuto traccia da un campo interno detto \textbf{link counter}.
+    \item Se il link counter di un file scende a 0, l'i-node e i blocchi di dati associati vengono rimossi.
+\end{itemize}
+
+\subsubsection{Comandi per gestire gli hard link}
+\paragraph{Creazione di un hard link}
+Si può creare un hard link con il comando \texttt{ln} o con la system call \texttt{link}:
+\begin{itemize}
+    \item \texttt{ln existing\_file new\_file}
+    \item \texttt{link(existing\_file, new\_file)}
+\end{itemize}
+In entrambi i casi, il sistema operativo:
+\begin{enumerate}
+    \item Recupera l'i-node di \texttt{existing\_file} e verifica i permessi.
+    \item Incrementa il link counter dell'i-node.
+    \item Aggiunge una nuova entry nella directory specificata per \texttt{new\_file}, associandola all'i-node di \texttt{existing\_file}.
+\end{enumerate}
+
+\paragraph{Rimozione di un hard link}
+Gli hard link possono essere rimossi con il comando \texttt{rm} o la system call \texttt{unlink}:
+\begin{itemize}
+    \item \texttt{rm file\_name}
+    \item \texttt{unlink(file\_name)}
+\end{itemize}
+Il sistema operativo:
+\begin{enumerate}
+    \item Recupera l'i-node del file e verifica i permessi.
+    \item Rimuove l'entry \texttt{file\_name} dalla directory.
+    \item Decrementa il link counter dell'i-node.
+    \item Se il link counter scende a 0, elimina l'i-node e recupera i blocchi di dati associati.
+\end{enumerate}
+
+\subsection{Symbolic Link (Link Simbolici)}
+I link simbolici (o soft link) sono un altro tipo di riferimento ai file, simili ai collegamenti utilizzati nei sistemi Windows. A differenza degli hard link:
+\begin{itemize}
+    \item Un symbolic link è un file speciale che contiene il \textbf{pathname} del file o della directory di destinazione.
+    \item È possibile creare symbolic link anche a directory e tra file su volumi o partizioni diverse.
+    \item I symbolic link sono distinguibili dagli hard link.
+    \item Se il file di destinazione viene rimosso, il symbolic link diventa un puntatore "rotto" (dangling link).
+\end{itemize}
+
+\subsubsection{Creazione di un symbolic link}
+I symbolic link vengono creati con il comando \texttt{ln -s}:
+\begin{verbatim}
+ln -s existing_file_or_directory symbolic_link_name
+\end{verbatim}
+Questo comando:
+\begin{enumerate}
+    \item Alloca un nuovo i-node per il symbolic link.
+    \item Memorizza nel campo \textbf{pathname} dell'i-node il percorso del file di destinazione.
+\end{enumerate}
+
+\subsubsection{Differenze tra hard link e symbolic link}
+\begin{itemize}
+    \item Gli hard link sono più efficienti perché non richiedono di accedere a un i-node aggiuntivo.
+    \item I symbolic link sono più flessibili, poiché possono puntare a file su volumi diversi e a directory.
+    \item L'eliminazione del file di destinazione non influisce sugli hard link, ma rende inutilizzabili i symbolic link.
+\end{itemize}
+
+\subsection{Gestione delle Directory in Unix}
+Quando si crea una directory (ad esempio \texttt{newdir} all'interno di \texttt{parentdir}):
+\begin{itemize}
+    \item La directory contiene automaticamente due entry:
+    \begin{itemize}
+        \item \texttt{.} che punta all'i-node della directory stessa.
+        \item \texttt{..} che punta all'i-node della directory padre.
+    \end{itemize}
+    \item Il link counter della nuova directory viene inizializzato a 2 (\texttt{.} e \texttt{newdir}).
+    \item Il link counter della directory padre viene incrementato di 1 (nuova entry \texttt{..}).
+\end{itemize}
+\qs{}{
+    Leggendo l'i-node di una cartella come facciamo a sapere quante sottocartelle contiene?
+}{}
+\nt{
+    Per sapere quante sottocartelle contiene una cartella, dobbiamo leggere il link counter dell'i-node della cartella stessa.
+    Ad esempio, se il link counter è 5, la cartella contiene 3 sottocartelle, oltre a \texttt{.} e \texttt{..}.
+}
+
+\subsubsection{Restrizioni sugli hard link alle directory}
+Unix proibisce la creazione di hard link a directory diverse da \texttt{.} e \texttt{..} (ad esempio con il comando \texttt{ln}), per evitare la creazione di cicli nel file system. 
+
+\paragraph{Esempio di errore}
+Se fosse possibile creare hard link tra directory:
+\begin{verbatim}
+ln /users newdir // Errore
+\end{verbatim}
+Si potrebbe generare un loop infinito durante una visita ricorsiva del file system.
+
+\subsection{Conclusione}
+Gli \textbf{hard link} e i \textbf{symbolic link} offrono due meccanismi diversi per gestire i riferimenti ai file in Unix:
+\begin{itemize}
+    \item Gli hard link sono più efficienti, ma meno flessibili.
+    \item I symbolic link offrono maggiore flessibilità, permettendo riferimenti a directory e file su volumi diversi, ma con un costo leggermente maggiore in termini di accesso.
+\end{itemize}
+La scelta tra i due dipende dall'uso specifico richiesto nel file system.
