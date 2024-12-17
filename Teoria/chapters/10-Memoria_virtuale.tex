@@ -64,8 +64,8 @@ La CPU determina la presenza di una pagina in RAM attraverso un \emph{bit di val
 Un processo può persino iniziare senza alcuna delle sue pagine in MP. Al primo indirizzamento da parte del Program Counter (PC), che è inizializzato dal SO, si genera un \emph{page fault} perché il PC punta a una pagina non in MP del processo. Questo approccio è detto \emph{Pure Demand Paging}.
 
 \nt{In alternativa, il SO può caricare in MP almeno la pagina contenente la prima istruzione da eseguire.}
-\begin{figure}[h] \centering \includegraphics[width=0.25\linewidth]{images/table_of_pages_notAllInRam.png} \caption{table_of_pages_notAllInRam.png} \label{fig:10.4} \end{figure}
-\begin{figure}[h] \centering \includegraphics[width=0.25\linewidth]{images/page_fault_gestion.png} \caption{page_fault_gestion.png} \label{fig:10.5} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.25\linewidth]{images/table_of_pages_notAllInRam.png} \caption{Tabella delle pagine non presente totalmente in RAM} \label{fig:10.4} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.25\linewidth]{images/page_fault_gestion.png} \caption{Gestione del Page Fault} \label{fig:10.5} \end{figure}
 
 \section{Demand Paging}
 \nt{
@@ -250,7 +250,7 @@ La gestione della sostituzione delle pagine è fondamentale per consentire l'ese
 Il metodo utilizzato per risolvere questi problemi influisce notevolmente sulle prestazioni di esecuzione dei processi.
 }
 
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/sostituzione_di_pagina.png} \caption{sostituzione_di_pagina.png} \label{fig:10.10} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/sostituzione_di_pagina.png} \caption{Sostituzione di pagina} \label{fig:10.10} \end{figure}
 
 \subsection{Algoritmi di sostituzione delle pagine}
 Se una pagina vittima appena rimossa viene nuovamente indirizzata dal processo a cui appartiene, si verifica un \textit{page fault} e la pagina deve essere ricaricata in memoria principale. In questo caso, parte del lavoro viene sprecato.\\
@@ -302,7 +302,7 @@ sono equivalenti per quanto riguarda la valutazione della bontà di un algoritmo
 \nt{
 Il numero di \textit{page fault} generati da una sequenza per un dato algoritmo di sostituzione dipende anche dal numero di frame disponibili. Intuitivamente, all’aumentare dei frame disponibili, il numero di \textit{page fault} tende a ridursi — ma come vedremo, ciò non accade sempre!
 }
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/page_faultGraph.png} \caption{page_faultGraph.png} \label{fig:5.4} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/page_faultGraph.png} \caption{Grafico dei page fault} \label{fig:5.4} \end{figure}
 
 \subsection{Sostituzione delle pagine secondo l’ordine d’arrivo (FIFO)}
 Nel seguito, assumeremo che a ogni processo venga assegnato un numero prestabilito di frame e che la scelta della pagina vittima avvenga esclusivamente tra le pagine del processo stesso. Questa politica prende il nome di sostituzione \textbf{locale} delle pagine.\\
@@ -518,7 +518,7 @@ In definitiva, quindi, il \textit{thrashing} rappresenta una sorta di “ingolfa
     Il \textit{thrashing} può essere prevenuto monitorando attentamente la frequenza dei page fault (come illustrato in figura 10.23).
 }
 
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/frequenctOfPageFault.png} \caption{frequenctOfPageFault.png} \label{fig:10.23} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/frequenctOfPageFault.png} \caption{Frequenza dei page fault} \label{fig:10.23} \end{figure}
 
 Adottare una politica di sostituzione locale può contribuire a ridurre il rischio di thrashing, poiché i processi non possono sottrarsi le pagine tra loro. Se un singolo processo entra in thrashing, non danneggia gli altri, sebbene possa utilizzare intensivamente le risorse di I/O su disco.
 

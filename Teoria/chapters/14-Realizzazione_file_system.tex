@@ -102,7 +102,7 @@ Opzionalmente, possono essere memorizzati anche:
 \end{itemize}
 }
 
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/allocazione_concatenata.png} \caption{allocazione-concatenata.png} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/allocazione_concatenata.png} \caption{Allocazione concatenata} \end{figure}
 
 \nt{
 Nell’ultimo blocco della catena, lo spazio destinato al puntatore al blocco successivo viene riempito con un numero negativo o con il valore \texttt{0}, per indicare che si tratta dell’ultimo blocco del file.
@@ -204,10 +204,22 @@ Calcolate lo spazio necessario per memorizzare la FAT di un hard disk con:
 Qual è la percentuale di spazio del disco "sprecata" per memorizzare la FAT?
 }
 
-La percetuale di spazio sprecata per memorizzare la FAT è data da:
+\noindent
+Numero di blocchi:
 \[
-    \frac{\text{Spazio occupato dalla FAT}}{\text{Spazio totale dell'hard disk}} \times 100
-        Numero di blocchi=Dimensione bloccoCapacitaˋ totale =102420×1024×1024×1024 =20×1024×1024=20971520blocchi.
+N_{\text{blocchi}} = \frac{20 \times 1024 \times 1024}{1} = 20971520 \, \text{blocchi}.
+\]
+
+\noindent
+Dimensione della FAT:
+\[
+\text{FAT} = N_{\text{blocchi}} \times 4 = 20971520 \times 4 = 83886080 \, \text{byte} = 80 \, \text{MB}.
+\]
+
+\noindent
+Percentuale di spazio occupata:
+\[
+\text{Percentuale} = \frac{80}{20480} \times 100 \approx 0.39\%.
 \]
 
 
@@ -255,9 +267,9 @@ Le soluzioni principali sono:
 \begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/allocazione_indiciz_levels.png} \caption{allocazione indiciz levels} \label{fig:14.4b} \end{figure}
 \nt{
     Soluzione esercizio:
-    32 bit: 4 byte
-    1024 blocchi / 4 byte = 256 blocchi
-    256 blocchi esterni * 256 blocchi interni = 65536 blocchi
+    32 bit: 4 byte\\
+    1024 blocchi / 4 byte = 256 blocchi\\
+    256 blocchi esterni * 256 blocchi interni = 65536 blocchi\\
     65536 blocchi * 1024 byte = 67108864 byte = 64 MB
 }
 \subsubsection{Gli i-node di Unix}

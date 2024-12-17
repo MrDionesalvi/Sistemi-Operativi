@@ -854,7 +854,7 @@ Quando due processi eseguono lo stesso codice, mantenere in memoria principale (
 Una pagina condivisa può essere utilizzata per contenere codice di librerie dinamiche che diversi processi possono usare contemporaneamente, riducendo ulteriormente lo spazio richiesto in MP per il codice eseguito da più processi.
 }
 
-\begin{figure}[h] \centering \includegraphics[width=0.45\linewidth]{images/shared_code_paginatedEnv.png} \caption{shared_code_paginatedEnv.png} \label{fig:9.9a} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.45\linewidth]{images/shared_code_paginatedEnv.png} \caption{Codice condiviso pagianto} \label{fig:9.9a} \end{figure}
 
 \section{Paginazione a più livelli}
 
@@ -897,7 +897,7 @@ dove:
     \item \(d\): 12 bit per l'offset all'interno della pagina.
 \end{itemize}
 }
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/traduzione_indirizzi_paginazione2Livelli.png} \caption{traduzione_indirizzi_paginazione2Livelli.png} \label{fig:9.16} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/traduzione_indirizzi_paginazione2Livelli.png} \caption{Traduzione degli indirizzi nella pagianzione a due livelli} \label{fig:9.16} \end{figure}
 
 \ex{Esempio di calcolo dell'indirizzo fisico}{
 Per comprendere il funzionamento della paginazione a due livelli in termini numerici, consideriamo un sistema in cui ogni entry delle PT occupa 4 byte (anche se tecnicamente sarebbero sufficienti 20 bit, poiché il numero massimo di frame è limitato). Prendiamo in esame la PT più grande, denominata \emph{PT interna}, che contiene \(2^{20}\) entry e quindi ha una dimensione di \(4 \times 2^{20}\) byte, richiedendo esattamente \(2^{10} = 1024\) frame.
@@ -912,7 +912,7 @@ I passi per tradurre un indirizzo logico \(V\) di 32 bit in un indirizzo fisico 
     \item Infine, aggiungendo l'offset \(d\) a \(F_2\), otteniamo l'indirizzo fisico finale.
 \end{itemize}
 }
-\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/ex_paginazione2Livelli.png} \caption{ex_paginazione2Livelli.png} \label{fig:9.17} \end{figure}
+\begin{figure}[h] \centering \includegraphics[width=0.50\linewidth]{images/ex_paginazione2Livelli.png} \caption{Esempio: Paginazione a due livelli} \label{fig:9.17} \end{figure}
 
 
 \section{Paginazione a due livelli}

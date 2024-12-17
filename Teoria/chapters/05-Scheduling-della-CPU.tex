@@ -42,11 +42,11 @@ Quando interviene lo scheduler per scegliere il successivo processo a cui assegn
 \end{enumerate}
 Quando un sistema interviene solo nei casi 1 e 2 si parla di: \textbf{Scheduling senza (diritto di) prelazione}.\\
 Quando un sistema interviene anche nei casi 3 e 4 si parla di: \textbf{Scheduling con (diritto di) prelazione}\\
-Chiaramente, lo \textcolor{blue}{\textbf{scheduling preemptive}} è più sicuro per gli utenti, ma la sua implementazione richiede un \textcolor{purple}{sistema operativo} e un’\textcolor{purple}{architettura hardware} più sofisticati (ad esempio, un \textbf{timer dedicato}).\\
-I moderni \textbf{sistemi operativi general purpose} usano tutti una qualche variante di \textcolor{blue}{\textbf{scheduling preemptive}}. Tuttavia, per applicazioni specifiche può essere sufficiente uno \textcolor{red}{\textbf{scheduling non-preemptive}}, permettendo l'uso di sistemi operativi più semplici e leggeri.\\
-Lo \textcolor{blue}{\textbf{scheduling preemptive}} può portare a situazioni che necessitano di essere gestite con attenzione. Ad esempio, consideriamo un processo che deve compiere un’operazione di \textcolor{orange}{\textbf{I/O}} e chiama la relativa \textcolor{purple}{system call}. Il controllo viene trasferito al \textcolor{purple}{sistema operativo}, che inizia l’operazione per conto del processo utente. Nel frattempo, scade il timer e il controllo viene passato a un'altra porzione del codice del \textcolor{purple}{SO}.\\
-Di conseguenza, una operazione delicata (altrimenti non sarebbe stata gestita dal \textcolor{purple}{SO}) viene interrotta a metà, e le \textcolor{orange}{\textbf{strutture dati}} potrebbero trovarsi in uno stato inconsistente poiché la system call di \textcolor{orange}{\textbf{I/O}} non ha finito di aggiornarle.\\
-\qs{}{Cosa succede se ora la \textcolor{purple}{CPU} viene data a un altro processo utente che tenta di usare lo stesso dispositivo di \textcolor{orange}{\textbf{I/O}} che il processo precedente stava utilizzando? Quale semplice soluzione può essere adottata in tali casi?}
+Chiaramente, lo {\textbf{scheduling preemptive}} è più sicuro per gli utenti, ma la sua implementazione richiede un {sistema operativo} e un’{architettura hardware} più sofisticati (ad esempio, un \textbf{timer dedicato}).\\
+I moderni \textbf{sistemi operativi general purpose} usano tutti una qualche variante di {\textbf{scheduling preemptive}}. Tuttavia, per applicazioni specifiche può essere sufficiente uno {\textbf{scheduling non-preemptive}}, permettendo l'uso di sistemi operativi più semplici e leggeri.\\
+Lo {\textbf{scheduling preemptive}} può portare a situazioni che necessitano di essere gestite con attenzione. Ad esempio, consideriamo un processo che deve compiere un’operazione di {\textbf{I/O}} e chiama la relativa {system call}. Il controllo viene trasferito al {sistema operativo}, che inizia l’operazione per conto del processo utente. Nel frattempo, scade il timer e il controllo viene passato a un'altra porzione del codice del {SO}.\\
+Di conseguenza, una operazione delicata (altrimenti non sarebbe stata gestita dal {SO}) viene interrotta a metà, e le {\textbf{strutture dati}} potrebbero trovarsi in uno stato inconsistente poiché la system call di {\textbf{I/O}} non ha finito di aggiornarle.\\
+\qs{}{Cosa succede se ora la {CPU} viene data a un altro processo utente che tenta di usare lo stesso dispositivo di {\textbf{I/O}} che il processo precedente stava utilizzando? Quale semplice soluzione può essere adottata in tali casi?}
 \nt{Vogliamo che il processo riesca a completare la richiesta al controller dell'I/O, niente di più}.
 Mentre \textbf{Unix} è stato sviluppato fin dall’inizio come sistema di tipo {\textbf{preemptive}}, nei sistemi \textbf{Microsoft} la preemption è stata introdotta solo con \textbf{Windows 95}. Questo è dovuto al fatto che i sistemi operativi della famiglia \textbf{MS-Dos} sono nati come sistemi {\textbf{mono-utente}}, per i quali era sufficiente un sistema operativo più semplice. Inoltre, i primi sistemi per PC giravano su {CPU} semplici ed economiche, non dotate del supporto hardware necessario per implementare un sistema operativo {\textbf{preemptive}}.\\
 
@@ -119,7 +119,7 @@ Usiamo un diagramma di Gnatt per rappresentare questa situazione
     \centering
     \includegraphics[width=0.5\linewidth]{images/FCFS_gnatt.png}
 \end{figure}
-Tempi di attesa $P_1 = 0; P_2 = 24; P_3 = 17$\\
+Tempi di attesa:$P_1 = 0;P_2 = 24;P_3 = 17$\\
 Tempo medio di attesa $(0+24+27)/3 = 17$\\
 Si dice che si è verificato \textbf{effetto convoglio}; i job più corti si sono dovuti accodare a quello lungo.
 \bigskip
@@ -161,7 +161,7 @@ Esempio:
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.2\linewidth]{images/SJF_nonpreemptive.png}
-    \caption{Average waiting time $(0 + 6 + 3 + 7)/4 = 4$}
+    \caption{Non-Preemptive: Average waiting time $(0 + 6 + 3 + 7)/4 = 4$}
 \end{figure}
 
 \subsubsection{preemptive}
@@ -169,7 +169,7 @@ Esempio:
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.2\linewidth]{images/SJF_preemptive.png}
-    \caption{Average waiting time $(9 + 1 + 0 + 2/4 = 3$}
+    \caption{Preempetive: Average waiting time $(9 + 1 + 0 + 2/4 = 3$}
 \end{figure}
 
 
